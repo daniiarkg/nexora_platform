@@ -21,11 +21,12 @@ const chartPoints = "M0,250 Q100,220 200,240 T400,150 T600,180 T800,80 T1000,120
 
 const automations = [
   {
-    name: "API Gateway Sync",
+    name: "Тестовый граф продаж",
     icon: DatabaseZap,
     status: "Активен",
     availability: "99.9%",
     report: "Сегодня, 14:20",
+    href: "/create?demo=test",
   },
   {
     name: "Lead Qualification AI",
@@ -33,6 +34,7 @@ const automations = [
     status: "На проверке",
     availability: "98.4%",
     report: "Сегодня, 11:05",
+    href: "/create?demo=test",
   },
   {
     name: "Slack Sales Alerts",
@@ -40,6 +42,7 @@ const automations = [
     status: "Черновик",
     availability: "—",
     report: "Вчера, 18:41",
+    href: "/create",
   },
 ];
 
@@ -171,7 +174,7 @@ export function Dashboard() {
                         <td>
                           <div className="automation-name">
                             <Icon size={20} />
-                            <span>{automation.name}</span>
+                            <Link href={automation.href}>{automation.name}</Link>
                           </div>
                         </td>
                         <td>

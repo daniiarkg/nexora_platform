@@ -66,7 +66,7 @@ func (c *GeminiClient) Generate(ctx context.Context, messages []models.ChatMessa
 		Contents: contents,
 		GenerationConfig: geminiGenerationConfig{
 			Temperature:     0.45,
-			MaxOutputTokens: 900,
+			MaxOutputTokens: 2400,
 		},
 	}
 
@@ -102,11 +102,18 @@ func (c *GeminiClient) Generate(ctx context.Context, messages []models.ChatMessa
 		return "", fmt.Errorf("decode gemini response: %w", err)
 	}
 	for _, candidate := range decoded.Candidates {
+		var answer strings.Builder
 		for _, part := range candidate.Content.Parts {
 			text := strings.TrimSpace(part.Text)
 			if text != "" {
-				return text, nil
+				if answer.Len() > 0 {
+					answer.WriteString("\n\n")
+				}
+				answer.WriteString(text)
 			}
+		}
+		if answer.Len() > 0 {
+			return answer.String(), nil
 		}
 	}
 	return "", errors.New("gemini response did not include text")
