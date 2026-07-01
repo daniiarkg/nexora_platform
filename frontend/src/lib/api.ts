@@ -13,7 +13,7 @@ import type {
   RegisterPayload,
 } from "@/types";
 
-const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
 type SubmitResponse = {
   request: AutomationRequest;
@@ -196,15 +196,23 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 async function fetchFromApi<T>(apiURL: string, path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${apiURL}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 12000);
+  let response: Response;
+  try {
+    response = await fetch(`${apiURL}${path}`, {
+      ...init,
+      credentials: "include",
+      signal: init.signal ?? controller.signal,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...init.headers,
+      },
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -215,11 +223,12 @@ async function fetchFromApi<T>(apiURL: string, path: string, init: RequestInit =
 }
 
 function getApiURLs(): string[] {
-  const urls = [CONFIGURED_API_URL];
+  const urls = CONFIGURED_API_URL ? [CONFIGURED_API_URL] : [""];
 
   if (typeof window !== "undefined") {
+    const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
     const currentHostAPI = `${window.location.protocol}//${window.location.hostname}:8080`;
-    if (!urls.includes(currentHostAPI)) {
+    if (isLocalHost && !urls.includes(currentHostAPI)) {
       urls.push(currentHostAPI);
     }
   }
@@ -228,5 +237,5 @@ function getApiURLs(): string[] {
 }
 
 function isNetworkFetchError(error: unknown) {
-  return error instanceof TypeError && /fetch|network|failed/i.test(error.message);
+  return error instanceof Error && /abort|fetch|network|failed/i.test(`${error.name} ${error.message}`);
 }
