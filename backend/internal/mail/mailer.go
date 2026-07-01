@@ -20,9 +20,9 @@ import (
 	"github.com/daniiarkg/nexora_platform/backend/internal/models"
 )
 
-const logoCID = "nexora-logo-white"
+const logoCID = "nexora-logo-dark"
 
-//go:embed templates/*.tmpl assets/nexora-logo-white.svg
+//go:embed templates/*.tmpl assets/nexora-logo-dark.svg
 var templateFS embed.FS
 
 type Config struct {
@@ -585,7 +585,7 @@ func actionURL(def templateDefinition, data templateData, metadata map[string]st
 }
 
 func buildMIMEMessage(from string, recipients []string, message renderedMessage) ([]byte, error) {
-	logoBytes, err := templateFS.ReadFile("assets/nexora-logo-white.svg")
+	logoBytes, err := templateFS.ReadFile("assets/nexora-logo-dark.svg")
 	if err != nil {
 		return nil, fmt.Errorf("read logo asset: %w", err)
 	}
@@ -630,10 +630,10 @@ func buildMIMEMessage(from string, recipients []string, message renderedMessage)
 	raw.WriteString("--" + alternativeBoundary + "--\r\n")
 
 	raw.WriteString("--" + relatedBoundary + "\r\n")
-	raw.WriteString("Content-Type: image/svg+xml; name=\"nexora-logo-white.svg\"\r\n")
+	raw.WriteString("Content-Type: image/svg+xml; name=\"nexora-logo-dark.svg\"\r\n")
 	raw.WriteString("Content-Transfer-Encoding: base64\r\n")
 	raw.WriteString("Content-ID: <" + logoCID + ">\r\n")
-	raw.WriteString("Content-Disposition: inline; filename=\"nexora-logo-white.svg\"\r\n\r\n")
+	raw.WriteString("Content-Disposition: inline; filename=\"nexora-logo-dark.svg\"\r\n\r\n")
 	raw.WriteString(wrapBase64(logoBytes))
 	raw.WriteString("\r\n")
 	raw.WriteString("--" + relatedBoundary + "--\r\n")
