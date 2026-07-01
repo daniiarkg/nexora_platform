@@ -195,6 +195,41 @@ func (s *Store) ListAutomationRequests(ctx context.Context, limit int, offset in
 	return requests, nil
 }
 
+func (s *Store) GetAutomationRequest(ctx context.Context, id string) (models.AutomationRequest, error) {
+	var req models.AutomationRequest
+	var graphRaw []byte
+	err := s.pool.QueryRow(ctx, `
+		SELECT id::text, title, description, icon_kind, icon_value,
+			customer_name, customer_email, customer_company, graph,
+			status, created_at, updated_at
+		FROM automation_requests
+		WHERE id = $1
+	`, id).Scan(
+		&req.ID,
+		&req.Title,
+		&req.Description,
+		&req.IconKind,
+		&req.IconValue,
+		&req.Customer.Name,
+		&req.Customer.Email,
+		&req.Customer.Company,
+		&graphRaw,
+		&req.Status,
+		&req.CreatedAt,
+		&req.UpdatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return models.AutomationRequest{}, fmt.Errorf("automation request not found")
+		}
+		return models.AutomationRequest{}, fmt.Errorf("get automation request: %w", err)
+	}
+	if err := json.Unmarshal(graphRaw, &req.Graph); err != nil {
+		return models.AutomationRequest{}, fmt.Errorf("unmarshal graph: %w", err)
+	}
+	return req, nil
+}
+
 func NewID() string {
 	return uuid.NewString()
 }

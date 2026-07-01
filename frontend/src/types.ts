@@ -45,6 +45,52 @@ export type AutomationRequest = AutomationRequestPayload & {
   updated_at: string;
 };
 
+export type EmailTemplateSummary = {
+  id: string;
+  name: string;
+  description: string;
+  default_metadata: Record<string, string>;
+};
+
+export type AdminEmailOptions = {
+  from_options: string[];
+  templates: EmailTemplateSummary[];
+};
+
+export type EmailTemplateRender = {
+  template_id: string;
+  subject: string;
+  preheader: string;
+  html: string;
+  text: string;
+  metadata: Record<string, string>;
+};
+
+export type AdminEmailPreviewPayload = {
+  template_id: string;
+  request_id?: string;
+  metadata?: Record<string, string>;
+};
+
+export type AdminClientEmailPayload = {
+  to: string;
+  from: string;
+  template_id: string;
+  request_id?: string;
+  subject: string;
+  preheader?: string;
+  html: string;
+  text: string;
+  metadata?: Record<string, string>;
+};
+
+export type AdminClientEmailResponse = {
+  sent: boolean;
+  template_id: string;
+  to: string;
+  from: string;
+};
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;

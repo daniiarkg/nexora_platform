@@ -56,13 +56,14 @@ func main() {
 	defer valkey.Close()
 
 	mailer := mail.NewMailer(mail.Config{
-		Host:       cfg.SMTPHost,
-		Port:       cfg.SMTPPort,
-		Username:   cfg.SMTPUsername,
-		Password:   cfg.SMTPPassword,
-		From:       cfg.SMTPFrom,
-		Recipients: cfg.SMTPAdminRecipients,
-		AppURL:     cfg.PublicAppURL,
+		Host:        cfg.SMTPHost,
+		Port:        cfg.SMTPPort,
+		Username:    cfg.SMTPUsername,
+		Password:    cfg.SMTPPassword,
+		From:        cfg.SMTPFrom,
+		FromOptions: cfg.SMTPFromOptions,
+		Recipients:  cfg.SMTPAdminRecipients,
+		AppURL:      cfg.PublicAppURL,
 	}, logger)
 	mailer.Start(ctx, cfg.EmailWorkers)
 

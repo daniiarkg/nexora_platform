@@ -25,6 +25,7 @@ type Config struct {
 	SMTPUsername        string
 	SMTPPassword        string
 	SMTPFrom            string
+	SMTPFromOptions     []string
 	SMTPAdminRecipients []string
 	EmailWorkers        int
 
@@ -49,6 +50,7 @@ func Load() (Config, error) {
 		SMTPHost:             getEnv("SMTP_HOST", "smtp.gmail.com"),
 		SMTPUsername:         os.Getenv("SMTP_USERNAME"),
 		SMTPFrom:             os.Getenv("SMTP_FROM"),
+		SMTPFromOptions:      splitCSV(os.Getenv("SMTP_FROM_OPTIONS")),
 		EmailWorkers:         getEnvInt("EMAIL_WORKERS", 2),
 		PaymentProvider:      strings.ToLower(getEnv("PAYMENT_PROVIDER", "unselected")),
 		PaymentWebhookSecret: os.Getenv("PAYMENT_WEBHOOK_SECRET"),
@@ -60,6 +62,9 @@ func Load() (Config, error) {
 	cfg.SMTPPassword = os.Getenv("SMTP_APP_PASSWORD")
 	if cfg.SMTPPassword == "" {
 		cfg.SMTPPassword = os.Getenv("SMTP_PASSWORD")
+	}
+	if len(cfg.SMTPFromOptions) == 0 && cfg.SMTPFrom != "" {
+		cfg.SMTPFromOptions = []string{cfg.SMTPFrom}
 	}
 	cfg.SMTPAdminRecipients = splitCSV(os.Getenv("SMTP_ADMIN_RECIPIENTS"))
 

@@ -73,6 +73,9 @@ func (s *Server) Routes() http.Handler {
 		r.Group(func(admin chi.Router) {
 			admin.Use(s.requireAdmin)
 			admin.Get("/admin/automation-requests", s.listAutomationRequests)
+			admin.Get("/admin/email-options", s.emailOptions)
+			admin.Post("/admin/email-preview", s.emailPreview)
+			admin.Post("/admin/client-emails", s.sendClientEmail)
 		})
 	})
 

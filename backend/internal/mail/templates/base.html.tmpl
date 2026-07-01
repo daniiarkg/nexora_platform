@@ -1,0 +1,52 @@
+{{define "layout"}}
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>{{.Subject}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#131313;color:#e5e2e1;font-family:Inter,Manrope,Arial,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{{.Preheader}}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#131313;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="640" cellspacing="0" cellpadding="0" style="width:100%;max-width:640px;border-collapse:separate;border-spacing:0;">
+            <tr>
+              <td style="padding:1px;border-radius:20px;background:linear-gradient(135deg,rgba(0,103,79,.75),rgba(255,255,255,.06));">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#201f1f;border-radius:19px;overflow:hidden;">
+                  <tr>
+                    <td style="padding:28px 30px 22px;border-bottom:1px solid rgba(255,255,255,.06);">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="left" style="vertical-align:middle;">
+                            <img src="cid:{{.LogoCID}}" width="150" alt="Nexora" style="display:block;width:150px;max-width:150px;height:auto;border:0;outline:none;text-decoration:none;">
+                          </td>
+                          <td align="right" style="vertical-align:middle;">
+                            <span style="display:inline-block;padding:8px 11px;border-radius:999px;background:rgba(0,103,79,.16);color:#8ed9c5;font-size:12px;line-height:1;font-weight:600;">AI automation</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:30px;">
+                      {{template "content" .}}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 6px 0;color:#88938d;font-size:12px;line-height:1.6;text-align:center;">
+                Nexora отправляет это письмо по действию в платформе. Если вы получили его по ошибке, просто проигнорируйте сообщение.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+{{end}}

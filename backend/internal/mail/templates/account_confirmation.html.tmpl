@@ -1,0 +1,14 @@
+{{define "content"}}
+<h1 style="margin:0 0 12px;color:#ffffff;font-size:28px;line-height:1.18;font-weight:700;letter-spacing:0;">Подтвердите аккаунт Nexora</h1>
+<p style="margin:0 0 22px;color:#bec9c3;font-size:15px;line-height:1.65;">{{.CustomerName}}, завершите регистрацию, чтобы получить доступ к рабочему пространству и заявкам на автоматизацию.</p>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px;background:#1c1b1b;border:1px solid rgba(255,255,255,.06);border-radius:14px;">
+  <tr>
+    <td style="padding:18px;color:#bec9c3;font-size:14px;line-height:1.65;">
+      Ссылка действует ограниченное время. Если вы не создавали аккаунт Nexora, это письмо можно безопасно игнорировать.
+    </td>
+  </tr>
+</table>
+
+<a href="{{.ActionURL}}" style="display:inline-block;padding:14px 18px;border-radius:10px;background:#00674F;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">Подтвердить аккаунт</a>
+{{end}}

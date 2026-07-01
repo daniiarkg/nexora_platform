@@ -57,6 +57,52 @@ type AutomationRequest struct {
 	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
+type EmailTemplateSummary struct {
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	DefaultMetadata map[string]string `json:"default_metadata"`
+}
+
+type AdminEmailOptions struct {
+	FromOptions []string               `json:"from_options"`
+	Templates   []EmailTemplateSummary `json:"templates"`
+}
+
+type AdminEmailPreviewInput struct {
+	TemplateID string            `json:"template_id"`
+	RequestID  string            `json:"request_id,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
+type EmailTemplateRender struct {
+	TemplateID string            `json:"template_id"`
+	Subject    string            `json:"subject"`
+	Preheader  string            `json:"preheader"`
+	HTML       string            `json:"html"`
+	Text       string            `json:"text"`
+	Metadata   map[string]string `json:"metadata"`
+}
+
+type AdminClientEmailInput struct {
+	To         string            `json:"to"`
+	From       string            `json:"from"`
+	TemplateID string            `json:"template_id"`
+	RequestID  string            `json:"request_id,omitempty"`
+	Subject    string            `json:"subject"`
+	Preheader  string            `json:"preheader,omitempty"`
+	HTML       string            `json:"html"`
+	Text       string            `json:"text"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
+type AdminClientEmailResponse struct {
+	Sent       bool   `json:"sent"`
+	TemplateID string `json:"template_id"`
+	To         string `json:"to"`
+	From       string `json:"from"`
+}
+
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`

@@ -1,4 +1,13 @@
-import type { AutomationRequest, AutomationRequestPayload, ChatMessage } from "@/types";
+import type {
+  AdminClientEmailPayload,
+  AdminClientEmailResponse,
+  AdminEmailOptions,
+  AdminEmailPreviewPayload,
+  AutomationRequest,
+  AutomationRequestPayload,
+  ChatMessage,
+  EmailTemplateRender,
+} from "@/types";
 
 const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
@@ -41,6 +50,40 @@ export async function fetchAutomationRequests(token: string): Promise<AdminListR
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+}
+
+export async function fetchAdminEmailOptions(token: string): Promise<AdminEmailOptions> {
+  return apiFetch<AdminEmailOptions>("/api/v1/admin/email-options", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function renderAdminEmailTemplate(
+  token: string,
+  payload: AdminEmailPreviewPayload,
+): Promise<EmailTemplateRender> {
+  return apiFetch<EmailTemplateRender>("/api/v1/admin/email-preview", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function sendAdminClientEmail(
+  token: string,
+  payload: AdminClientEmailPayload,
+): Promise<AdminClientEmailResponse> {
+  return apiFetch<AdminClientEmailResponse>("/api/v1/admin/client-emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
   });
 }
 
