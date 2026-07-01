@@ -1,5 +1,8 @@
+"use client";
+
+import { AuthGuard } from "@/components/auth-guard";
 import { BuilderHistoryPage } from "@/components/builder-history-page";
 
 export default function CreateHistoryPage() {
-  return <BuilderHistoryPage />;
+  return <AuthGuard>{() => <BuilderHistoryPage />}</AuthGuard>;
 }

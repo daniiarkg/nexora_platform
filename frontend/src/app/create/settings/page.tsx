@@ -1,5 +1,8 @@
+"use client";
+
+import { AuthGuard } from "@/components/auth-guard";
 import { BuilderSettingsPage } from "@/components/builder-settings-page";
 
 export default function CreateSettingsPage() {
-  return <BuilderSettingsPage />;
+  return <AuthGuard>{() => <BuilderSettingsPage />}</AuthGuard>;
 }

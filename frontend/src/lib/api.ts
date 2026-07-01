@@ -1,12 +1,16 @@
 import type {
   AdminClientEmailPayload,
   AdminClientEmailResponse,
+  AccessKeyLoginPayload,
   AdminEmailOptions,
   AdminEmailPreviewPayload,
+  AuthResponse,
   AutomationRequest,
   AutomationRequestPayload,
   ChatMessage,
   EmailTemplateRender,
+  LoginPayload,
+  RegisterPayload,
 } from "@/types";
 
 const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
@@ -87,6 +91,77 @@ export async function sendAdminClientEmail(
   });
 }
 
+export async function register(payload: RegisterPayload): Promise<AuthResponse & { email_sent: boolean; message: string }> {
+  return apiFetch<AuthResponse & { email_sent: boolean; message: string }>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function login(payload: LoginPayload): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function loginWithAccessKey(payload: AccessKeyLoginPayload): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/access-key", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function logout(): Promise<void> {
+  await apiFetch("/api/v1/auth/logout", {
+    method: "POST",
+  });
+}
+
+export async function fetchCurrentUser(): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/me");
+}
+
+export async function confirmEmail(token: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/confirm", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendConfirmation(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/api/v1/auth/resend-confirmation", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/api/v1/auth/password-reset/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function confirmPasswordReset(
+  token: string,
+  password: string,
+  confirmPassword: string,
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/api/v1/auth/password-reset/confirm", {
+    method: "POST",
+    body: JSON.stringify({
+      token,
+      password,
+      confirm_password: confirmPassword,
+    }),
+  });
+}
+
+export function googleOAuthURL(): string {
+  return `${getApiURLs()[0]}/api/v1/auth/google/start`;
+}
+
 export async function createCheckoutIntent(planId: string, customerEmail: string) {
   return apiFetch("/api/v1/payments/checkout-intents", {
     method: "POST",
@@ -123,6 +198,7 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 async function fetchFromApi<T>(apiURL: string, path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiURL}${path}`, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

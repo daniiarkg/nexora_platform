@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/daniiarkg/nexora_platform/backend/internal/ai"
+	authsec "github.com/daniiarkg/nexora_platform/backend/internal/auth"
 	"github.com/daniiarkg/nexora_platform/backend/internal/cache"
 	"github.com/daniiarkg/nexora_platform/backend/internal/config"
 	"github.com/daniiarkg/nexora_platform/backend/internal/httpserver"
@@ -45,6 +47,10 @@ func main() {
 
 	if err := dbStore.Migrate(ctx); err != nil {
 		logger.Error("postgres migration failed", "error", err)
+		os.Exit(1)
+	}
+	if err := dbStore.SeedAccessKeys(ctx, accessKeySeeds(cfg.AuthAccessKeys)); err != nil {
+		logger.Error("access key seed failed", "error", err)
 		os.Exit(1)
 	}
 
@@ -103,4 +109,18 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("nexora api stopped")
+}
+
+func accessKeySeeds(keys []string) []store.AccessKeySeed {
+	seeds := make([]store.AccessKeySeed, 0, len(keys))
+	for i, key := range keys {
+		if key == "" {
+			continue
+		}
+		seeds = append(seeds, store.AccessKeySeed{
+			Label:     "Bootstrap access key " + strconv.Itoa(i+1),
+			TokenHash: authsec.HashToken(key),
+		})
+	}
+	return seeds
 }

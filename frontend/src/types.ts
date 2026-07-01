@@ -91,6 +91,39 @@ export type AdminClientEmailResponse = {
   from: string;
 };
 
+export type AuthUser = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  company: string;
+  phone: string;
+  email_verified: boolean;
+};
+
+export type AuthResponse = {
+  user: AuthUser;
+};
+
+export type RegisterPayload = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  company: string;
+  phone: string;
+  password: string;
+  confirm_password: string;
+};
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
+
+export type AccessKeyLoginPayload = {
+  access_key: string;
+};
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;

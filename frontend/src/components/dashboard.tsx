@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   Bell,
@@ -11,11 +12,14 @@ import {
   FolderOpen,
   History,
   LayoutDashboard,
+  LogOut,
   PlusCircle,
   RadioTower,
   Sparkles,
   Zap,
 } from "lucide-react";
+import { logout } from "@/lib/api";
+import type { AuthUser } from "@/types";
 
 const chartPoints = "M0,250 Q100,220 200,240 T400,150 T600,180 T800,80 T1000,120";
 
@@ -53,7 +57,18 @@ const navItems = [
   { label: "Помощь", icon: CircleHelp },
 ];
 
-export function Dashboard() {
+type DashboardProps = {
+  user: AuthUser;
+};
+
+export function Dashboard({ user }: DashboardProps) {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logout().catch(() => undefined);
+    router.replace("/auth/login");
+  }
+
   return (
     <main className="dashboard-page">
       <aside className="dashboard-sidebar">
@@ -91,9 +106,14 @@ export function Dashboard() {
             <img alt="" src="/brand/nexora-icon.png" />
           </div>
           <div>
-            <p>Константин В.</p>
-            <span>Workspace Owner</span>
+            <p>
+              {user.first_name} {user.last_name}
+            </p>
+            <span>{user.company || "Workspace Owner"}</span>
           </div>
+          <button className="dashboard-logout" type="button" onClick={handleLogout} aria-label="Выйти">
+            <LogOut size={18} />
+          </button>
         </div>
       </aside>
 

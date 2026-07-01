@@ -103,6 +103,78 @@ type AdminClientEmailResponse struct {
 	From       string `json:"from"`
 }
 
+type User struct {
+	ID              string     `json:"id"`
+	Email           string     `json:"email"`
+	FirstName       string     `json:"first_name"`
+	LastName        string     `json:"last_name"`
+	Company         string     `json:"company"`
+	Phone           string     `json:"phone"`
+	PasswordHash    string     `json:"-"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+type AuthUser struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Company       string `json:"company"`
+	Phone         string `json:"phone"`
+	EmailVerified bool   `json:"email_verified"`
+}
+
+type AuthResponse struct {
+	User AuthUser `json:"user"`
+}
+
+type RegisterInput struct {
+	Email           string `json:"email"`
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	Company         string `json:"company"`
+	Phone           string `json:"phone"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirm_password"`
+}
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type AccessKeyLoginInput struct {
+	AccessKey string `json:"access_key"`
+}
+
+type PasswordResetRequestInput struct {
+	Email string `json:"email"`
+}
+
+type PasswordResetConfirmInput struct {
+	Token           string `json:"token"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"confirm_password"`
+}
+
+type TokenInput struct {
+	Token string `json:"token"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
+type GoogleProfile struct {
+	ProviderUserID string
+	Email          string
+	EmailVerified  bool
+	FirstName      string
+	LastName       string
+}
+
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`

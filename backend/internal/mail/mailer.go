@@ -304,6 +304,53 @@ func (m *Mailer) SendAdminClientEmail(ctx context.Context, input models.AdminCli
 	}
 }
 
+func (m *Mailer) SendAccountConfirmation(ctx context.Context, user models.User, confirmationURL string) (bool, error) {
+	return m.sendUserTemplate(ctx, "account_confirmation", user, map[string]string{
+		"confirmation_url": confirmationURL,
+	})
+}
+
+func (m *Mailer) SendPasswordReset(ctx context.Context, user models.User, resetURL string) (bool, error) {
+	return m.sendUserTemplate(ctx, "password_reset", user, map[string]string{
+		"reset_url": resetURL,
+	})
+}
+
+func (m *Mailer) sendUserTemplate(ctx context.Context, templateID string, user models.User, metadata map[string]string) (bool, error) {
+	if !m.smtpReady() {
+		m.logger.Warn("smtp is not fully configured; auth email skipped", "template_id", templateID)
+		return false, nil
+	}
+
+	metadata = mergeStringMaps(map[string]string{
+		"customer_name":  strings.TrimSpace(user.FirstName + " " + user.LastName),
+		"customer_email": user.Email,
+	}, metadata)
+
+	rendered, err := m.renderTemplate(templateID, nil, metadata)
+	if err != nil {
+		return false, err
+	}
+	rendered.From = m.cfg.From
+	rendered.To = []string{user.Email}
+	rendered.Headers = map[string]string{
+		"X-Nexora-Template": templateID,
+		"X-Nexora-User-ID":  user.ID,
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- m.send(rendered)
+	}()
+
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	case err := <-done:
+		return err == nil, err
+	}
+}
+
 func (m *Mailer) sendAutomationRequest(req models.AutomationRequest) error {
 	var errs []error
 	if len(m.cfg.Recipients) > 0 {
@@ -696,6 +743,17 @@ func cloneMap(input map[string]string) map[string]string {
 	out := make(map[string]string, len(input))
 	for key, value := range input {
 		out[key] = value
+	}
+	return out
+}
+
+func mergeStringMaps(base map[string]string, extra map[string]string) map[string]string {
+	out := cloneMap(base)
+	for key, value := range extra {
+		key = strings.TrimSpace(key)
+		if key != "" {
+			out[key] = value
+		}
 	}
 	return out
 }

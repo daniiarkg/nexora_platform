@@ -59,13 +59,25 @@ func (s *Server) Routes() http.Handler {
 		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-ID"},
 		ExposedHeaders:   []string{"X-Request-ID"},
-		AllowCredentials: false,
+		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 
 	r.Get("/healthz", s.health)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Post("/auth/register", s.register)
+		r.Post("/auth/login", s.login)
+		r.Post("/auth/access-key", s.loginWithAccessKey)
+		r.Post("/auth/logout", s.logout)
+		r.Get("/auth/me", s.me)
+		r.Post("/auth/confirm", s.confirmEmail)
+		r.Post("/auth/resend-confirmation", s.resendConfirmation)
+		r.Post("/auth/password-reset/request", s.requestPasswordReset)
+		r.Post("/auth/password-reset/confirm", s.confirmPasswordReset)
+		r.Get("/auth/google/start", s.googleStart)
+		r.Get("/auth/google/callback", s.googleCallback)
+
 		r.Post("/automation-requests", s.createAutomationRequest)
 		r.Post("/ai/chat", s.chat)
 		r.Post("/payments/checkout-intents", s.createCheckoutIntent)
