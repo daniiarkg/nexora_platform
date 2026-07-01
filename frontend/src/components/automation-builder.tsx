@@ -116,7 +116,7 @@ const initialEdges: Edge[] = [
     label: "payload",
     markerEnd: { type: MarkerType.ArrowClosed },
     animated: true,
-    style: { stroke: "#4edea3", strokeWidth: 2 },
+    style: { stroke: "#00674F", strokeWidth: 2 },
   },
   {
     id: "ai-brief-notify",
@@ -125,7 +125,7 @@ const initialEdges: Edge[] = [
     label: "summary",
     markerEnd: { type: MarkerType.ArrowClosed },
     animated: true,
-    style: { stroke: "#4edea3", strokeWidth: 2 },
+    style: { stroke: "#00674F", strokeWidth: 2 },
   },
 ];
 
@@ -185,7 +185,7 @@ export function AutomationBuilder() {
             ...connection,
             markerEnd: { type: MarkerType.ArrowClosed },
             animated: true,
-            style: { stroke: "#4edea3", strokeWidth: 2 },
+            style: { stroke: "#00674F", strokeWidth: 2 },
           },
           current,
         ),
@@ -396,7 +396,7 @@ export function AutomationBuilder() {
             onEdgesChange={onEdgesChange}
             onNodesChange={onNodesChange}
           >
-            <Background color="rgba(220,227,240,0.18)" gap={38} size={1.3} />
+            <Background color="rgba(229,226,225,0.14)" gap={38} size={1.3} />
             <Controls position="bottom-right" showInteractive={false} />
           </ReactFlow>
 
@@ -569,7 +569,7 @@ function buildDemoGraph(prompt: string): { nodes: AutomationNodeType[]; edges: E
     label,
     markerEnd: { type: MarkerType.ArrowClosed },
     animated: true,
-    style: { stroke: "#4edea3", strokeWidth: 2 },
+    style: { stroke: "#00674F", strokeWidth: 2 },
   }));
 
   return { nodes: nextNodes, edges: nextEdges };
