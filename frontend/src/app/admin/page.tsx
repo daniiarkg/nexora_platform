@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, RefreshCw, ShieldCheck } from "lucide-react";
+import { RefreshCw, ShieldCheck } from "lucide-react";
 import { fetchAutomationRequests } from "@/lib/api";
 import type { AutomationRequest } from "@/types";
 
@@ -43,15 +42,12 @@ export default function AdminPage() {
       <section className="admin-wrap">
         <div className="admin-toolbar">
           <div className="brand">
-            <div className="brand-mark">
-              <ShieldCheck size={24} />
-            </div>
-            <h1 className="brand-name">Nexora Admin</h1>
+            <img className="admin-brand-logo" alt="Nexora" src="/brand/nexora-logo-white.svg" />
+            <span className="admin-label">
+              <ShieldCheck size={16} />
+              Admin
+            </span>
           </div>
-          <Link className="secondary-button" href="/">
-            <ArrowLeft size={18} />
-            <span>Canvas</span>
-          </Link>
         </div>
 
         <div className="admin-card">

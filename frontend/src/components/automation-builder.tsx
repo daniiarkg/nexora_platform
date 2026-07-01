@@ -38,7 +38,6 @@ import {
   Maximize2,
   MessageCircle,
   MousePointer2,
-  Network,
   PlusSquare,
   RotateCcw,
   Route,
@@ -318,10 +317,9 @@ export function AutomationBuilder() {
   return (
     <main className="flow-shell">
       <header className="flow-header">
-        <div className="nexora-logo">
-          <Network size={42} />
-          <span>Nexora</span>
-        </div>
+        <Link className="nexora-logo" href="/">
+          <img alt="Nexora" src="/brand/nexora-logo-white.svg" />
+        </Link>
 
         <div className="flow-header-actions">
           <button className="header-action" type="button">
@@ -340,7 +338,7 @@ export function AutomationBuilder() {
 
       <section className="workflow-canvas">
         <div className="sidebar-dropdown neu-raised">
-          <Link className="dropdown-item" href="/admin">
+          <Link className="dropdown-item" href="/">
             <ArrowLeft size={18} />
             <span>Вернуться ко всем проектам</span>
           </Link>
@@ -362,7 +360,7 @@ export function AutomationBuilder() {
         <aside className="floating-ai neu-raised">
           <div className="floating-ai-header">
             <div className="panel-title">
-              <Bot size={18} fill="currentColor" />
+              <img className="panel-icon-image" alt="" src="/brand/nexora-icon.png" />
               <span>ИИ Ассистент</span>
             </div>
             <div className="live-dot" />

@@ -1,5 +1,5 @@
-import { AutomationBuilder } from "@/components/automation-builder";
+import { Dashboard } from "@/components/dashboard";
 
 export default function Home() {
-  return <AutomationBuilder />;
+  return <Dashboard />;
 }

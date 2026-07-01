@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Nexora",
   description: "AI automation request platform",
+  icons: {
+    icon: "/brand/nexora-icon.png",
+    apple: "/brand/nexora-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
