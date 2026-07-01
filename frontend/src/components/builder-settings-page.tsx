@@ -76,14 +76,6 @@ export function BuilderSettingsPage() {
                 onChange={(event) => updateSetting("workspaceName", event.target.value)}
               />
             </label>
-            <label className="field">
-              <span>Email по умолчанию</span>
-              <input
-                value={settings.defaultEmail}
-                onChange={(event) => updateSetting("defaultEmail", event.target.value)}
-                placeholder="owner@company.com"
-              />
-            </label>
 
             <label className="toggle-row">
               <input

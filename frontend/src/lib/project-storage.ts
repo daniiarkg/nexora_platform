@@ -11,7 +11,6 @@ export type ProjectHistoryEvent = {
 
 export type WorkspaceSettings = {
   workspaceName: string;
-  defaultEmail: string;
   autosave: boolean;
   snapToGrid: boolean;
   notes: string;
@@ -19,7 +18,6 @@ export type WorkspaceSettings = {
 
 export const defaultWorkspaceSettings: WorkspaceSettings = {
   workspaceName: "Nexora Workspace",
-  defaultEmail: "",
   autosave: true,
   snapToGrid: true,
   notes: "",

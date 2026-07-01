@@ -69,6 +69,7 @@ import type { AutomationRequestPayload, ChatMessage } from "@/types";
 
 type Mode = "ask" | "create";
 type ToolMode = "select" | "connect";
+type NoticeState = { type: "ok" | "error"; text: string } | null;
 
 type AutomationNodeData = {
   title: string;
@@ -207,7 +208,8 @@ export function AutomationBuilder() {
       content: "Готов собрать схему и подсказать, какие интеграции, данные и проверки понадобятся.",
     },
   ]);
-  const [status, setStatus] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [agentStatus, setAgentStatus] = useState<NoticeState>(null);
+  const [formStatus, setFormStatus] = useState<NoticeState>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialProjectLoaded = useRef(false);
@@ -261,7 +263,6 @@ export function AutomationBuilder() {
     initialProjectLoaded.current = true;
 
     const workspaceSettings = readWorkspaceSettings();
-    setCustomerEmail(workspaceSettings.defaultEmail);
     setAutosaveEnabled(workspaceSettings.autosave);
     setSnapToGrid(workspaceSettings.snapToGrid);
 
@@ -304,21 +305,23 @@ export function AutomationBuilder() {
   }, [flowInstance, nodes.length]);
 
   async function handlePromptAction() {
-    setStatus(null);
-    if (!prompt.trim()) {
-      setStatus({ type: "error", text: "Заполните сценарий автоматизации." });
+    setAgentStatus(null);
+    const submittedPrompt = prompt.trim();
+    if (!submittedPrompt) {
+      setAgentStatus({ type: "error", text: "Заполните сценарий автоматизации." });
       return;
     }
 
     if (mode === "create") {
-      const generated = buildDemoGraph(prompt);
+      const generated = buildDemoGraph(submittedPrompt);
       setNodes(generated.nodes);
       setEdges(generated.edges);
       setSelectedNodeId(generated.nodes[0]?.id ?? null);
       setSelectedNodeIds([]);
       setSelectedEdgeIds([]);
-      setStatus({ type: "ok", text: "Демонстрационный граф обновлен." });
-      appendProjectHistory("Граф создан из промпта", prompt.trim().slice(0, 140));
+      setPrompt("");
+      setAgentStatus({ type: "ok", text: "Демонстрационный граф обновлен." });
+      appendProjectHistory("Граф создан из промпта", submittedPrompt.slice(0, 140));
       window.setTimeout(() => {
         void flowInstance?.fitView({ padding: 0.28, duration: 240 });
       }, 120);
@@ -326,15 +329,17 @@ export function AutomationBuilder() {
     }
 
     setIsChatLoading(true);
-    const nextMessages: ChatMessage[] = [...chatMessages, { role: "user", content: prompt }];
+    const nextMessages: ChatMessage[] = [...chatMessages, { role: "user", content: submittedPrompt }];
     setChatMessages(nextMessages);
+    setPrompt("");
     try {
       const answer = await sendChatMessage(sessionId, nextMessages);
       setSessionId(answer.session_id);
       setChatMessages([...nextMessages, { role: "assistant", content: answer.message.trim() || "Ответ пустой." }]);
-      appendProjectHistory("AI ответил в чате", prompt.trim().slice(0, 140));
+      appendProjectHistory("AI ответил в чате", submittedPrompt.slice(0, 140));
     } catch (error) {
-      setStatus({ type: "error", text: error instanceof Error ? error.message : "AI недоступен." });
+      setPrompt(submittedPrompt);
+      setAgentStatus({ type: "error", text: error instanceof Error ? error.message : "AI недоступен." });
       setChatMessages(chatMessages);
     } finally {
       setIsChatLoading(false);
@@ -342,26 +347,27 @@ export function AutomationBuilder() {
   }
 
   function openSaveModal() {
-    setStatus(null);
+    setFormStatus(null);
     setShowSaveModal(true);
   }
 
   function saveDraft() {
     writeDraft();
     appendProjectHistory("Черновик сохранен", title);
-    setStatus({ type: "ok", text: "Черновик сохранен локально." });
+    setFormStatus({ type: "ok", text: "Черновик сохранен локально." });
     setLastSavedAt(new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }));
   }
 
   async function handleSubmit() {
-    setStatus(null);
+    setFormStatus(null);
     if (!customerName.trim() || !customerEmail.trim()) {
-      setStatus({ type: "error", text: "Заполните имя и email перед отправкой." });
+      setFormStatus({ type: "error", text: "Заполните имя и email перед отправкой." });
       setShowSaveModal(true);
       return;
     }
     if (nodes.length === 0) {
-      setStatus({ type: "error", text: "Добавьте хотя бы один узел в граф." });
+      setFormStatus({ type: "error", text: "Добавьте хотя бы один узел в граф." });
+      setShowSaveModal(true);
       return;
     }
 
@@ -399,16 +405,15 @@ export function AutomationBuilder() {
       };
 
       const result = await submitAutomationRequest(payload);
-      setStatus({
+      setFormStatus({
         type: "ok",
         text: `Заявка ${result.request.id.slice(0, 8)} отправлена. Email: ${
           result.email_queued ? "в очереди" : "не настроен"
         }.`,
       });
       appendProjectHistory("Заявка отправлена", `${title} -> ${customerEmail}`);
-      setShowSaveModal(false);
     } catch (error) {
-      setStatus({ type: "error", text: error instanceof Error ? error.message : "Заявка не отправлена." });
+      setFormStatus({ type: "error", text: error instanceof Error ? error.message : "Заявка не отправлена." });
     } finally {
       setIsSubmitting(false);
     }
@@ -439,13 +444,13 @@ export function AutomationBuilder() {
       return;
     }
     if (file.size > 180_000) {
-      setStatus({ type: "error", text: "Иконка должна быть меньше 180 KB." });
+      setFormStatus({ type: "error", text: "Иконка должна быть меньше 180 KB." });
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       setUploadedIcon(String(reader.result ?? ""));
-      setStatus({ type: "ok", text: "Иконка загружена." });
+      setFormStatus({ type: "ok", text: "Иконка загружена." });
       appendProjectHistory("Иконка проекта обновлена", file.name);
     };
     reader.readAsDataURL(file);
@@ -483,7 +488,7 @@ export function AutomationBuilder() {
     const nodeIds = selectedNodeIds.length > 0 ? selectedNodeIds : selectedNodeId ? [selectedNodeId] : [];
     const edgeIds = selectedEdgeIds;
     if (nodeIds.length === 0 && edgeIds.length === 0) {
-      setStatus({ type: "error", text: "Выберите узел или связь для удаления." });
+      setAgentStatus({ type: "error", text: "Выберите узел или связь для удаления." });
       return;
     }
 
@@ -507,13 +512,13 @@ export function AutomationBuilder() {
 
     if (!connectSourceId) {
       setConnectSourceId(node.id);
-      setStatus({ type: "ok", text: "Выберите второй узел для связи." });
+      setAgentStatus({ type: "ok", text: "Выберите второй узел для связи." });
       return;
     }
 
     if (connectSourceId === node.id) {
       setConnectSourceId(null);
-      setStatus({ type: "error", text: "Связь должна вести в другой узел." });
+      setAgentStatus({ type: "error", text: "Связь должна вести в другой узел." });
       return;
     }
 
@@ -521,7 +526,7 @@ export function AutomationBuilder() {
     setEdges((current) => addEdge(edge, current));
     setConnectSourceId(null);
     setToolMode("select");
-    setStatus({ type: "ok", text: "Связь добавлена." });
+    setAgentStatus({ type: "ok", text: "Связь добавлена." });
     appendProjectHistory("Связь добавлена", `${connectSourceId} -> ${node.id}`);
   }
 
@@ -680,7 +685,9 @@ export function AutomationBuilder() {
               {isChatLoading ? <div className="chat-message assistant loading-message">Nexora печатает...</div> : null}
             </div>
 
-            {status ? <div className={`notice ${status.type === "error" ? "error" : ""}`}>{status.text}</div> : null}
+            {agentStatus ? (
+              <div className={`notice ${agentStatus.type === "error" ? "error" : ""}`}>{agentStatus.text}</div>
+            ) : null}
           </div>
 
           <div className="floating-ai-footer">
@@ -719,7 +726,7 @@ export function AutomationBuilder() {
             onClick={() => {
               setToolMode("connect");
               setConnectSourceId(null);
-              setStatus({ type: "ok", text: "Выберите первый узел для связи." });
+              setAgentStatus({ type: "ok", text: "Выберите первый узел для связи." });
             }}
           >
             <Route size={20} />
@@ -967,7 +974,9 @@ export function AutomationBuilder() {
                     <span>{isSubmitting ? "Отправка" : "Отправить заявку"}</span>
                   </button>
                 </div>
-                {status ? <div className={`notice ${status.type === "error" ? "error" : ""}`}>{status.text}</div> : null}
+                {formStatus ? (
+                  <div className={`notice ${formStatus.type === "error" ? "error" : ""}`}>{formStatus.text}</div>
+                ) : null}
               </div>
             </section>
           </div>

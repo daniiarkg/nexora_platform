@@ -1,6 +1,6 @@
 import type { AutomationRequest, AutomationRequestPayload, ChatMessage } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
 
 type SubmitResponse = {
   request: AutomationRequest;
@@ -57,7 +57,28 @@ export async function createCheckoutIntent(planId: string, customerEmail: string
 }
 
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  let networkError: unknown = null;
+
+  for (const apiURL of getApiURLs()) {
+    try {
+      return await fetchFromApi<T>(apiURL, path, init);
+    } catch (error) {
+      if (isNetworkFetchError(error)) {
+        networkError = error;
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error(
+    "Не удалось подключиться к API. Проверьте, что backend запущен и доступен на порту 8080.",
+    { cause: networkError },
+  );
+}
+
+async function fetchFromApi<T>(apiURL: string, path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${apiURL}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
@@ -72,4 +93,21 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new Error(message);
   }
   return payload as T;
+}
+
+function getApiURLs(): string[] {
+  const urls = [CONFIGURED_API_URL];
+
+  if (typeof window !== "undefined") {
+    const currentHostAPI = `${window.location.protocol}//${window.location.hostname}:8080`;
+    if (!urls.includes(currentHostAPI)) {
+      urls.push(currentHostAPI);
+    }
+  }
+
+  return urls;
+}
+
+function isNetworkFetchError(error: unknown) {
+  return error instanceof TypeError && /fetch|network|failed/i.test(error.message);
 }
