@@ -762,11 +762,19 @@ a {
 }
 
 .react-flow__handle {
-  width: 11px;
-  height: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(12, 12, 12, 0.86);
   background: var(--primary);
-  box-shadow: 0 0 12px rgba(0, 103, 79, 0.5);
+  box-shadow: 0 0 0 4px rgba(0, 103, 79, 0.16), 0 0 16px rgba(0, 103, 79, 0.58);
+}
+
+.automation-node .react-flow__handle-left {
+  left: -12px;
+}
+
+.automation-node .react-flow__handle-right {
+  right: -12px;
 }
 
 .automation-node {
@@ -863,8 +871,8 @@ a {
 }
 
 .node-port {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 999px;
   background: rgba(63, 73, 68, 0.2);
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4), -2px -2px 5px rgba(255, 255, 255, 0.03);

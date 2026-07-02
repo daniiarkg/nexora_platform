@@ -54,6 +54,7 @@ func (c *GeminiClient) GenerateGraphEdit(ctx context.Context, input models.Graph
 		"Nodes must have id, type, title, description, icon, position. Use lowercase latin kebab-case ids.",
 		"Allowed icons: Zap, Webhook, BrainCircuit, DatabaseZap, MailCheck, Boxes, ShieldCheck, Rocket.",
 		"Edges must only connect existing node ids. Never add text labels to edges; omit label entirely.",
+		"Use a horizontal layout with at least 430px between adjacent nodes.",
 		"If mode is create, replace the graph with a complete useful automation of 4-8 nodes.",
 		"If mode is edit, preserve the current graph and return only commands needed for the user's requested change. If the user only asks a question, return an empty commands array.",
 		"Keep descriptions concise and practical. The graph is a demonstration, not an executing workflow.",

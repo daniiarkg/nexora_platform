@@ -13,6 +13,13 @@ import (
 
 var graphIDPartPattern = regexp.MustCompile(`[a-z0-9]+`)
 
+const (
+	generatedGraphStartX = 180
+	generatedGraphStartY = 130
+	generatedGraphStepX  = 460
+	generatedGraphStepY  = 140
+)
+
 var allowedGraphIcons = map[string]struct{}{
 	"Zap":          {},
 	"Webhook":      {},
@@ -211,7 +218,11 @@ func applyGraphEditCommands(
 	if mode == "create" && len(graph.Nodes) == 0 {
 		return graph, applied, errors.New("create mode did not produce nodes")
 	}
-	return normalizeAutomationGraph(graph), applied, nil
+	graph = normalizeAutomationGraph(graph)
+	if mode == "create" {
+		graph = spreadGeneratedGraphHorizontally(graph)
+	}
+	return graph, applied, nil
 }
 
 func normalizeAutomationGraph(graph models.AutomationGraph) models.AutomationGraph {
@@ -285,8 +296,8 @@ func sanitizeGraphNode(node models.GraphNode, index int) models.GraphNode {
 	position := node.Position
 	if position.X == 0 && position.Y == 0 {
 		position = models.GraphPosition{
-			X: float64(180 + (index%4)*330),
-			Y: float64(140 + (index/4)*190 + (index%2)*110),
+			X: float64(generatedGraphStartX + index*generatedGraphStepX),
+			Y: float64(generatedGraphStartY + (index%2)*generatedGraphStepY),
 		}
 	}
 
@@ -299,6 +310,16 @@ func sanitizeGraphNode(node models.GraphNode, index int) models.GraphNode {
 		Position:    position,
 		Metadata:    map[string]string{"source": "nexora-ai-graph-editor"},
 	}
+}
+
+func spreadGeneratedGraphHorizontally(graph models.AutomationGraph) models.AutomationGraph {
+	for index := range graph.Nodes {
+		graph.Nodes[index].Position = models.GraphPosition{
+			X: float64(generatedGraphStartX + index*generatedGraphStepX),
+			Y: float64(generatedGraphStartY + (index%2)*generatedGraphStepY),
+		}
+	}
+	return graph
 }
 
 func sanitizeNodeID(raw string, title string, index int) string {
