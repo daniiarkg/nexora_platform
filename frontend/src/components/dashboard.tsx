@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -90,11 +91,14 @@ const projects: Array<{
 ];
 
 const navItems = [
-  { label: "Дашборд", icon: LayoutDashboard, active: true },
-  { label: "История", icon: History },
-  { label: "Оплата", icon: CreditCard },
-  { label: "Помощь", icon: CircleHelp },
+  { label: "Главная", icon: LayoutDashboard, href: "#main", active: true },
+  { label: "История", icon: History, href: "/create/history" },
+  { label: "Оплата", icon: CreditCard, href: "#payment" },
+  { label: "Помощь", icon: CircleHelp, href: "/create/settings" },
 ];
+
+const mainProjectStatuses = new Set<ProjectStatus>(["запущен", "в обработке", "в разработке"]);
+const mainProjects = projects.filter((project) => mainProjectStatuses.has(project.status));
 
 type DashboardProps = {
   user: AuthUser;
@@ -102,8 +106,9 @@ type DashboardProps = {
 
 export function Dashboard({ user }: DashboardProps) {
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  async function handleLogout() {
+  async function confirmLogout() {
     await logout().catch(() => undefined);
     router.replace("/auth/login");
   }
@@ -142,38 +147,39 @@ export function Dashboard({ user }: DashboardProps) {
         <nav className="dashboard-nav">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const className = `dashboard-nav-item ${item.active ? "active" : ""}`;
             return (
-              <a className={`dashboard-nav-item ${item.active ? "active" : ""}`} href={`#${item.label}`} key={item.label}>
+              <Link className={className} href={item.href} key={item.label}>
                 <Icon size={20} />
                 <span>{item.label}</span>
-              </a>
+              </Link>
             );
           })}
         </nav>
 
         <div className="sidebar-section-title">Проекты</div>
         <div className="project-list">
-          <a className="dashboard-nav-item" href="#projects">
-            <FolderOpen size={20} />
-            <span>E-commerce Sync</span>
-          </a>
-          <a className="dashboard-nav-item" href="#projects">
-            <FolderOpen size={20} />
-            <span>Data Pipeline Pro</span>
-          </a>
+          {projects.map((project) => (
+            <Link className="dashboard-nav-item sidebar-project-link" href={project.href} key={project.name}>
+              <FolderOpen size={20} />
+              <span>{project.name}</span>
+            </Link>
+          ))}
         </div>
 
         <div className="sidebar-profile">
-          <div className="scenario-icon profile-avatar-mini">
-            <img alt="" src={user.avatar_url || "/brand/nexora-icon.png"} />
-          </div>
-          <div>
-            <p>
-              {user.first_name} {user.last_name}
-            </p>
-            <Link href="/profile">{user.company || "Личный кабинет"}</Link>
-          </div>
-          <button className="dashboard-logout" type="button" onClick={handleLogout} aria-label="Выйти">
+          <Link className="sidebar-profile-link" href="/profile">
+            <div className="scenario-icon profile-avatar-mini">
+              <img alt="" src={user.avatar_url || "/brand/nexora-icon.png"} />
+            </div>
+            <div>
+              <p>
+                {user.first_name} {user.last_name}
+              </p>
+              <span>{user.company || "Личный кабинет"}</span>
+            </div>
+          </Link>
+          <button className="dashboard-logout" type="button" onClick={() => setShowLogoutConfirm(true)} aria-label="Выйти">
             <LogOut size={18} />
           </button>
         </div>
@@ -196,7 +202,7 @@ export function Dashboard({ user }: DashboardProps) {
         </header>
 
         <div className="dashboard-content">
-          <section className="dashboard-section" id="Дашборд">
+          <section className="dashboard-section" id="main">
             <div className="section-heading">
               <div>
                 <h1>Частота использования системы</h1>
@@ -249,7 +255,7 @@ export function Dashboard({ user }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map((project) => {
+                  {mainProjects.map((project) => {
                     const Icon = project.icon;
                     const status = projectStatusMeta[project.status];
                     const StatusIcon = status.icon;
@@ -296,7 +302,7 @@ export function Dashboard({ user }: DashboardProps) {
             </div>
           </section>
 
-          <section className="dashboard-cards" id="Оплата">
+          <section className="dashboard-cards" id="payment">
             <article className="dashboard-card">
               <div className="scenario-icon">
                 <img alt="" src="/brand/nexora-icon.png" />
@@ -304,19 +310,45 @@ export function Dashboard({ user }: DashboardProps) {
               <h3>Оплата</h3>
               <p>Платежный слой подготовлен под будущий MoR. Провайдер подключается отдельно.</p>
             </article>
-            <article className="dashboard-card" id="История">
+            <Link className="dashboard-card dashboard-card-link" href="/create/history">
               <Activity size={24} />
               <h3>История</h3>
               <p>События заявок, правок графов и AI-сессий будут отображаться здесь.</p>
-            </article>
-            <article className="dashboard-card" id="Помощь">
+            </Link>
+            <Link className="dashboard-card dashboard-card-link" href="/create/settings">
               <CircleHelp size={24} />
               <h3>Помощь</h3>
               <p>Справка по созданию демонстрационных автоматизаций и подготовке к внедрению.</p>
-            </article>
+            </Link>
           </section>
         </div>
       </section>
+      {showLogoutConfirm ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="save-modal logout-modal neu-raised" role="dialog" aria-modal="true" aria-label="Подтверждение выхода">
+            <div className="floating-ai-header">
+              <div className="panel-title">
+                <LogOut size={18} />
+                <span>Выйти из аккаунта?</span>
+              </div>
+              <button className="mini-close" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Закрыть">
+                ×
+              </button>
+            </div>
+            <div className="logout-modal-body">
+              <p>Текущая сессия будет завершена. Для доступа к проектам нужно будет войти снова.</p>
+              <div className="save-modal-actions">
+                <button className="secondary-save-button" type="button" onClick={() => setShowLogoutConfirm(false)}>
+                  Остаться
+                </button>
+                <button className="danger-button" type="button" onClick={confirmLogout}>
+                  Выйти
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

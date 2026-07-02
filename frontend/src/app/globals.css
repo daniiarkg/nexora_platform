@@ -1107,6 +1107,37 @@ a {
   font-weight: 520;
 }
 
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #b84a4a;
+  font-size: 13px;
+  font-weight: 560;
+  box-shadow: 0 0 16px rgba(184, 74, 74, 0.2), 5px 5px 14px var(--shadow-dark);
+}
+
+.danger-button:hover {
+  background: #c95b5b;
+}
+
+.logout-modal-body {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.logout-modal-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .help-modal-body {
   display: grid;
   gap: 12px;
@@ -1210,6 +1241,11 @@ a {
   gap: 8px;
 }
 
+.project-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .dashboard-nav-item {
   display: flex;
   align-items: center;
@@ -1220,6 +1256,13 @@ a {
   color: var(--muted);
   font-size: 15px;
   transition: color 160ms ease, background 160ms ease;
+}
+
+.sidebar-project-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dashboard-nav-item:hover {
@@ -1251,7 +1294,22 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.sidebar-profile > div:nth-child(2) {
+.sidebar-profile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+  border-radius: 10px;
+  color: inherit;
+}
+
+.sidebar-profile-link:hover p,
+.sidebar-profile-link:hover span {
+  color: var(--primary);
+}
+
+.sidebar-profile-link > div:nth-child(2) {
   min-width: 0;
   flex: 1;
 }
@@ -1297,15 +1355,6 @@ a {
 .sidebar-profile span {
   color: var(--muted);
   font-size: 12px;
-}
-
-.sidebar-profile a {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.sidebar-profile a:hover {
-  color: var(--primary);
 }
 
 .dashboard-main {
@@ -1680,6 +1729,17 @@ a {
   min-height: 180px;
   padding: 22px;
   border-radius: 14px;
+}
+
+.dashboard-card-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.dashboard-card-link:hover {
+  border-color: rgba(0, 103, 79, 0.36);
+  transform: translateY(-1px);
 }
 
 .dashboard-card > svg {

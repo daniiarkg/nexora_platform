@@ -25,6 +25,7 @@ function ProfileCabinet({ initialUser }: { initialUser: AuthUser }) {
   });
   const [status, setStatus] = useState<Status>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +49,7 @@ function ProfileCabinet({ initialUser }: { initialUser: AuthUser }) {
     }
   }
 
-  async function handleLogout() {
+  async function confirmLogout() {
     await logout().catch(() => undefined);
     window.location.href = "/auth/login";
   }
@@ -80,7 +81,7 @@ function ProfileCabinet({ initialUser }: { initialUser: AuthUser }) {
           <Link className="auth-logo" href="/">
             <img alt="Nexora" src="/brand/nexora-logo-white.svg" />
           </Link>
-          <button className="dashboard-logout" type="button" onClick={handleLogout} aria-label="Выйти">
+          <button className="dashboard-logout" type="button" onClick={() => setShowLogoutConfirm(true)} aria-label="Выйти">
             <LogOut size={18} />
           </button>
         </div>
@@ -161,7 +162,7 @@ function ProfileCabinet({ initialUser }: { initialUser: AuthUser }) {
           <div className="profile-actions">
             <Link className="secondary-save-button" href="/">
               <ArrowLeft size={16} />
-              <span>В дашборд</span>
+              <span>На главную</span>
             </Link>
             <button className="primary-button" type="submit" disabled={isSubmitting}>
               <Save size={17} />
@@ -170,6 +171,32 @@ function ProfileCabinet({ initialUser }: { initialUser: AuthUser }) {
           </div>
         </form>
       </section>
+      {showLogoutConfirm ? (
+        <div className="modal-backdrop" role="presentation">
+          <section className="save-modal logout-modal neu-raised" role="dialog" aria-modal="true" aria-label="Подтверждение выхода">
+            <div className="floating-ai-header">
+              <div className="panel-title">
+                <LogOut size={18} />
+                <span>Выйти из аккаунта?</span>
+              </div>
+              <button className="mini-close" type="button" onClick={() => setShowLogoutConfirm(false)} aria-label="Закрыть">
+                ×
+              </button>
+            </div>
+            <div className="logout-modal-body">
+              <p>Текущая сессия будет завершена. Для доступа к проектам нужно будет войти снова.</p>
+              <div className="save-modal-actions">
+                <button className="secondary-save-button" type="button" onClick={() => setShowLogoutConfirm(false)}>
+                  Остаться
+                </button>
+                <button className="danger-button" type="button" onClick={confirmLogout}>
+                  Выйти
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

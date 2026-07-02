@@ -338,7 +338,7 @@ func (s *Server) googleCallback(w http.ResponseWriter, r *http.Request) {
 		fail("session")
 		return
 	}
-	http.Redirect(w, r, appURL+"/profile", http.StatusFound)
+	http.Redirect(w, r, appURL+"/", http.StatusFound)
 }
 
 func (s *Server) fetchGoogleProfile(ctx context.Context, code string, redirectURI string) (models.GoogleProfile, error) {

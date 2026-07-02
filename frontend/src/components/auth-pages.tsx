@@ -192,7 +192,7 @@ export function LoginPage() {
         router.replace(`/auth/waiting-confirmation?email=${encodeURIComponent(payload.user.email)}`);
         return;
       }
-      router.replace("/profile");
+      router.replace("/");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Вход не удался.";
       if (message.includes("Подтвердите")) {
@@ -482,7 +482,7 @@ export function ConfirmEmailPage({ token }: { token: string }) {
           return;
         }
         setStatus({ type: "ok", text: "Email подтвержден." });
-        window.setTimeout(() => router.replace("/profile"), 700);
+        window.setTimeout(() => router.replace("/"), 700);
       })
       .catch((error) => {
         if (active) {
