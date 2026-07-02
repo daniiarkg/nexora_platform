@@ -64,6 +64,7 @@ func (s *Server) Routes() http.Handler {
 	}))
 
 	r.Get("/healthz", s.health)
+	r.Post("/logout", s.logout)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/auth/register", s.register)
@@ -71,6 +72,7 @@ func (s *Server) Routes() http.Handler {
 		r.Post("/auth/access-key", s.loginWithAccessKey)
 		r.Post("/auth/logout", s.logout)
 		r.Get("/auth/me", s.me)
+		r.Post("/auth/profile", s.updateProfile)
 		r.Post("/auth/confirm", s.confirmEmail)
 		r.Post("/auth/resend-confirmation", s.resendConfirmation)
 		r.Post("/auth/password-reset/request", s.requestPasswordReset)

@@ -110,6 +110,7 @@ type User struct {
 	LastName        string     `json:"last_name"`
 	Company         string     `json:"company"`
 	Phone           string     `json:"phone"`
+	AvatarURL       string     `json:"avatar_url"`
 	PasswordHash    string     `json:"-"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
@@ -123,6 +124,7 @@ type AuthUser struct {
 	LastName      string `json:"last_name"`
 	Company       string `json:"company"`
 	Phone         string `json:"phone"`
+	AvatarURL     string `json:"avatar_url"`
 	EmailVerified bool   `json:"email_verified"`
 }
 
@@ -147,6 +149,14 @@ type LoginInput struct {
 
 type AccessKeyLoginInput struct {
 	AccessKey string `json:"access_key"`
+}
+
+type UpdateProfileInput struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Company   string `json:"company"`
+	Phone     string `json:"phone"`
+	AvatarURL string `json:"avatar_url"`
 }
 
 type PasswordResetRequestInput struct {

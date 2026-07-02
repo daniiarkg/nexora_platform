@@ -98,6 +98,7 @@ export type AuthUser = {
   last_name: string;
   company: string;
   phone: string;
+  avatar_url: string;
   email_verified: boolean;
 };
 
@@ -122,6 +123,14 @@ export type LoginPayload = {
 
 export type AccessKeyLoginPayload = {
   access_key: string;
+};
+
+export type UpdateProfilePayload = {
+  first_name: string;
+  last_name: string;
+  company: string;
+  phone: string;
+  avatar_url: string;
 };
 
 export type ChatMessage = {

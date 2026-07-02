@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         source: "/healthz",
         destination: `${apiInternalURL}/healthz`,
       },
+      {
+        source: "/logout",
+        destination: `${apiInternalURL}/logout`,
+      },
     ];
   },
 };

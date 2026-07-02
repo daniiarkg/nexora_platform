@@ -30,6 +30,14 @@ type CreateUserInput struct {
 	EmailVerified bool
 }
 
+type UpdateUserProfileInput struct {
+	FirstName string
+	LastName  string
+	Company   string
+	Phone     string
+	AvatarURL string
+}
+
 type AccessKeySeed struct {
 	Label     string
 	TokenHash string
@@ -48,7 +56,7 @@ func (s *Store) CreateUser(ctx context.Context, input CreateUserInput) (models.U
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 	`,
 		input.Email,
 		input.FirstName,
@@ -64,6 +72,7 @@ func (s *Store) CreateUser(ctx context.Context, input CreateUserInput) (models.U
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -90,7 +99,7 @@ func (s *Store) getUser(ctx context.Context, where string, arg any) (models.User
 	var user models.User
 	err := s.pool.QueryRow(ctx, `
 		SELECT id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 		FROM users
 		WHERE `+where,
 		arg,
@@ -101,6 +110,7 @@ func (s *Store) getUser(ctx context.Context, where string, arg any) (models.User
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -123,7 +133,7 @@ func (s *Store) MarkUserEmailVerified(ctx context.Context, userID string) (model
 			updated_at = now()
 		WHERE id = $1
 		RETURNING id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 	`, userID).Scan(
 		&user.ID,
 		&user.Email,
@@ -131,6 +141,7 @@ func (s *Store) MarkUserEmailVerified(ctx context.Context, userID string) (model
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -138,6 +149,38 @@ func (s *Store) MarkUserEmailVerified(ctx context.Context, userID string) (model
 	)
 	if err != nil {
 		return models.User{}, fmt.Errorf("mark email verified: %w", err)
+	}
+	return user, nil
+}
+
+func (s *Store) UpdateUserProfile(ctx context.Context, userID string, input UpdateUserProfileInput) (models.User, error) {
+	var user models.User
+	err := s.pool.QueryRow(ctx, `
+		UPDATE users
+		SET first_name = $2,
+			last_name = $3,
+			company = $4,
+			phone = $5,
+			avatar_url = $6,
+			updated_at = now()
+		WHERE id = $1
+		RETURNING id::text, email, first_name, last_name, company, phone,
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
+	`, userID, input.FirstName, input.LastName, input.Company, input.Phone, input.AvatarURL).Scan(
+		&user.ID,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Company,
+		&user.Phone,
+		&user.AvatarURL,
+		&user.PasswordHash,
+		&user.EmailVerifiedAt,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return models.User{}, fmt.Errorf("update user profile: %w", err)
 	}
 	return user, nil
 }
@@ -199,7 +242,7 @@ func (s *Store) ConsumeAuthToken(ctx context.Context, purpose string, tokenHash 
 	var user models.User
 	err = tx.QueryRow(ctx, `
 		SELECT t.id::text, u.id::text, u.email, u.first_name, u.last_name,
-			u.company, u.phone, u.password_hash, u.email_verified_at,
+			u.company, u.phone, u.avatar_url, u.password_hash, u.email_verified_at,
 			u.created_at, u.updated_at
 		FROM auth_tokens t
 		JOIN users u ON u.id = t.user_id
@@ -216,6 +259,7 @@ func (s *Store) ConsumeAuthToken(ctx context.Context, purpose string, tokenHash 
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -238,7 +282,7 @@ func (s *Store) ConsumeAuthToken(ctx context.Context, purpose string, tokenHash 
 				updated_at = now()
 			WHERE id = $1
 			RETURNING id::text, email, first_name, last_name, company, phone,
-				password_hash, email_verified_at, created_at, updated_at
+				avatar_url, password_hash, email_verified_at, created_at, updated_at
 		`, user.ID).Scan(
 			&user.ID,
 			&user.Email,
@@ -246,6 +290,7 @@ func (s *Store) ConsumeAuthToken(ctx context.Context, purpose string, tokenHash 
 			&user.LastName,
 			&user.Company,
 			&user.Phone,
+			&user.AvatarURL,
 			&user.PasswordHash,
 			&user.EmailVerifiedAt,
 			&user.CreatedAt,
@@ -283,7 +328,7 @@ func (s *Store) GetUserBySessionTokenHash(ctx context.Context, tokenHash string)
 	var user models.User
 	err = tx.QueryRow(ctx, `
 		SELECT s.id::text, u.id::text, u.email, u.first_name, u.last_name,
-			u.company, u.phone, u.password_hash, u.email_verified_at,
+			u.company, u.phone, u.avatar_url, u.password_hash, u.email_verified_at,
 			u.created_at, u.updated_at
 		FROM user_sessions s
 		JOIN users u ON u.id = s.user_id
@@ -298,6 +343,7 @@ func (s *Store) GetUserBySessionTokenHash(ctx context.Context, tokenHash string)
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -378,7 +424,7 @@ func (s *Store) UpsertGoogleUser(ctx context.Context, profile models.GoogleProfi
 			)
 			VALUES ($1, $2, $3, '', '', '', $4)
 			RETURNING id::text, email, first_name, last_name, company, phone,
-				password_hash, email_verified_at, created_at, updated_at
+				avatar_url, password_hash, email_verified_at, created_at, updated_at
 		`, profile.Email, profile.FirstName, profile.LastName, verifiedAt).Scan(
 			&user.ID,
 			&user.Email,
@@ -386,6 +432,7 @@ func (s *Store) UpsertGoogleUser(ctx context.Context, profile models.GoogleProfi
 			&user.LastName,
 			&user.Company,
 			&user.Phone,
+			&user.AvatarURL,
 			&user.PasswordHash,
 			&user.EmailVerifiedAt,
 			&user.CreatedAt,
@@ -459,7 +506,7 @@ func (s *Store) AuthenticateAccessKey(ctx context.Context, tokenHash string) (mo
 			)
 			VALUES ($1, 'Access', 'Key', $2, '', '', now())
 			RETURNING id::text, email, first_name, last_name, company, phone,
-				password_hash, email_verified_at, created_at, updated_at
+				avatar_url, password_hash, email_verified_at, created_at, updated_at
 		`, userEmail, label).Scan(
 			&user.ID,
 			&user.Email,
@@ -467,6 +514,7 @@ func (s *Store) AuthenticateAccessKey(ctx context.Context, tokenHash string) (mo
 			&user.LastName,
 			&user.Company,
 			&user.Phone,
+			&user.AvatarURL,
 			&user.PasswordHash,
 			&user.EmailVerifiedAt,
 			&user.CreatedAt,
@@ -516,7 +564,7 @@ func scanOAuthUser(ctx context.Context, tx pgx.Tx, providerUserID string) (model
 	var user models.User
 	err := tx.QueryRow(ctx, `
 		SELECT u.id::text, u.email, u.first_name, u.last_name, u.company, u.phone,
-			u.password_hash, u.email_verified_at, u.created_at, u.updated_at
+			u.avatar_url, u.password_hash, u.email_verified_at, u.created_at, u.updated_at
 		FROM oauth_accounts a
 		JOIN users u ON u.id = a.user_id
 		WHERE a.provider = 'google'
@@ -528,6 +576,7 @@ func scanOAuthUser(ctx context.Context, tx pgx.Tx, providerUserID string) (model
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -540,7 +589,7 @@ func scanUserByEmailInTx(ctx context.Context, tx pgx.Tx, email string) (models.U
 	var user models.User
 	err := tx.QueryRow(ctx, `
 		SELECT id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 		FROM users
 		WHERE lower(email) = lower($1)
 		FOR UPDATE
@@ -551,6 +600,7 @@ func scanUserByEmailInTx(ctx context.Context, tx pgx.Tx, email string) (models.U
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -563,7 +613,7 @@ func scanUserByIDInTx(ctx context.Context, tx pgx.Tx, id string) (models.User, e
 	var user models.User
 	err := tx.QueryRow(ctx, `
 		SELECT id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 		FROM users
 		WHERE id = $1
 		FOR UPDATE
@@ -574,6 +624,7 @@ func scanUserByIDInTx(ctx context.Context, tx pgx.Tx, id string) (models.User, e
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,
@@ -590,7 +641,7 @@ func updateUserVerifiedInTx(ctx context.Context, tx pgx.Tx, userID string) (mode
 			updated_at = now()
 		WHERE id = $1
 		RETURNING id::text, email, first_name, last_name, company, phone,
-			password_hash, email_verified_at, created_at, updated_at
+			avatar_url, password_hash, email_verified_at, created_at, updated_at
 	`, userID).Scan(
 		&user.ID,
 		&user.Email,
@@ -598,6 +649,7 @@ func updateUserVerifiedInTx(ctx context.Context, tx pgx.Tx, userID string) (mode
 		&user.LastName,
 		&user.Company,
 		&user.Phone,
+		&user.AvatarURL,
 		&user.PasswordHash,
 		&user.EmailVerifiedAt,
 		&user.CreatedAt,

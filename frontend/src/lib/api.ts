@@ -11,6 +11,7 @@ import type {
   EmailTemplateRender,
   LoginPayload,
   RegisterPayload,
+  UpdateProfilePayload,
 } from "@/types";
 
 const CONFIGURED_API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
@@ -113,13 +114,20 @@ export async function loginWithAccessKey(payload: AccessKeyLoginPayload): Promis
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch("/api/v1/auth/logout", {
+  await apiFetch("/logout", {
     method: "POST",
   });
 }
 
 export async function fetchCurrentUser(): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/api/v1/auth/me");
+}
+
+export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/v1/auth/profile", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function confirmEmail(token: string): Promise<AuthResponse> {

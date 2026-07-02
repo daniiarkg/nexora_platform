@@ -61,7 +61,7 @@ func Load() (Config, error) {
 		AuthAccessKeys:            splitCSV(os.Getenv("AUTH_ACCESS_KEYS")),
 		GoogleOAuthClientID:       os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
 		GoogleOAuthClientSecret:   os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
-		GoogleOAuthRedirectURL:    getEnv("GOOGLE_OAUTH_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
+		GoogleOAuthRedirectURL:    strings.TrimSpace(os.Getenv("GOOGLE_OAUTH_REDIRECT_URL")),
 		GeminiAPIKey:              os.Getenv("GEMINI_API_KEY"),
 		GeminiModel:               getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		SMTPHost:                  getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -84,6 +84,9 @@ func Load() (Config, error) {
 		cfg.SMTPFromOptions = []string{cfg.SMTPFrom}
 	}
 	cfg.SMTPAdminRecipients = splitCSV(os.Getenv("SMTP_ADMIN_RECIPIENTS"))
+	if cfg.GoogleOAuthRedirectURL == "" {
+		cfg.GoogleOAuthRedirectURL = strings.TrimRight(cfg.PublicAppURL, "/") + "/api/v1/auth/google/callback"
+	}
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("DATABASE_URL is required")

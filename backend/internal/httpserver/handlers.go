@@ -47,10 +47,19 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) createAutomationRequest(w http.ResponseWriter, r *http.Request) {
+	user, ok := s.currentUser(w, r)
+	if !ok {
+		return
+	}
 	var input models.AutomationRequestInput
 	if err := readJSON(w, r, &input); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
+	}
+	input.Customer = models.Customer{
+		Name:    strings.TrimSpace(user.FirstName + " " + user.LastName),
+		Email:   user.Email,
+		Company: user.Company,
 	}
 	if err := validateAutomationRequest(input); err != nil {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})

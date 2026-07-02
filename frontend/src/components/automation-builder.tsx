@@ -25,10 +25,8 @@ import "@xyflow/react/dist/style.css";
 import {
   ArrowLeft,
   ArrowUp,
-  AtSign,
   Boxes,
   BrainCircuit,
-  Building2,
   CheckCircle2,
   Clock3,
   DatabaseZap,
@@ -65,7 +63,7 @@ import {
   BUILDER_DRAFT_KEY,
   readWorkspaceSettings,
 } from "@/lib/project-storage";
-import type { AutomationRequestPayload, ChatMessage } from "@/types";
+import type { AuthUser, AutomationRequestPayload, ChatMessage } from "@/types";
 
 type Mode = "ask" | "create";
 type ToolMode = "select" | "connect";
@@ -85,9 +83,6 @@ type DraftPayload = {
   prompt: string;
   selectedIcon: string;
   uploadedIcon: string;
-  customerName: string;
-  customerEmail: string;
-  customerCompany: string;
   nodes: AutomationNodeType[];
   edges: Edge[];
   updatedAt: string;
@@ -177,16 +172,17 @@ const testEdges: Edge[] = [
   createStyledEdge("crm", "notify", "summary"),
 ];
 
-export function AutomationBuilder() {
+type AutomationBuilderProps = {
+  user: AuthUser;
+};
+
+export function AutomationBuilder({ user }: AutomationBuilderProps) {
   const [nodes, setNodes] = useState<AutomationNodeType[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [mode, setMode] = useState<Mode>("ask");
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [title, setTitle] = useState("Новый проект");
   const [prompt, setPrompt] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerCompany, setCustomerCompany] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("BrainCircuit");
   const [uploadedIcon, setUploadedIcon] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -218,6 +214,14 @@ export function AutomationBuilder() {
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId],
+  );
+  const accountCustomer = useMemo(
+    () => ({
+      name: `${user.first_name} ${user.last_name}`.trim() || user.email,
+      email: user.email,
+      company: user.company,
+    }),
+    [user.company, user.email, user.first_name, user.last_name],
   );
 
   const onNodesChange = useCallback(
@@ -292,7 +296,7 @@ export function AutomationBuilder() {
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [autosaveEnabled, nodes, edges, title, prompt, selectedIcon, uploadedIcon, customerName, customerEmail, customerCompany]);
+  }, [autosaveEnabled, nodes, edges, title, prompt, selectedIcon, uploadedIcon]);
 
   useEffect(() => {
     if (!flowInstance || nodes.length === 0 || initialFitDone.current) {
@@ -360,11 +364,6 @@ export function AutomationBuilder() {
 
   async function handleSubmit() {
     setFormStatus(null);
-    if (!customerName.trim() || !customerEmail.trim()) {
-      setFormStatus({ type: "error", text: "Заполните имя и email перед отправкой." });
-      setShowSaveModal(true);
-      return;
-    }
     if (nodes.length === 0) {
       setFormStatus({ type: "error", text: "Добавьте хотя бы один узел в граф." });
       setShowSaveModal(true);
@@ -379,9 +378,9 @@ export function AutomationBuilder() {
         icon_kind: uploadedIcon ? "upload" : "preset",
         icon_value: uploadedIcon || selectedIcon,
         customer: {
-          name: customerName,
-          email: customerEmail,
-          company: customerCompany,
+          name: accountCustomer.name,
+          email: accountCustomer.email,
+          company: accountCustomer.company,
         },
         graph: {
           nodes: nodes.map((node) => ({
@@ -411,7 +410,7 @@ export function AutomationBuilder() {
           result.email_queued ? "в очереди" : "не настроен"
         }.`,
       });
-      appendProjectHistory("Заявка отправлена", `${title} -> ${customerEmail}`);
+      appendProjectHistory("Заявка отправлена", `${title} -> ${accountCustomer.email}`);
     } catch (error) {
       setFormStatus({ type: "error", text: error instanceof Error ? error.message : "Заявка не отправлена." });
     } finally {
@@ -429,9 +428,6 @@ export function AutomationBuilder() {
       prompt,
       selectedIcon,
       uploadedIcon,
-      customerName,
-      customerEmail,
-      customerCompany,
       nodes,
       edges,
       updatedAt: new Date().toISOString(),
@@ -912,27 +908,17 @@ export function AutomationBuilder() {
                   <span>Название проекта</span>
                   <input value={title} onChange={(event) => setTitle(event.target.value)} />
                 </label>
-                <label className="field">
-                  <span>Имя</span>
-                  <div className="input-with-icon">
-                    <User size={16} />
-                    <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
+                <div className="account-request-card">
+                  <div className="account-request-main">
+                    <User size={17} />
+                    <div>
+                      <span>Заявитель</span>
+                      <strong>{accountCustomer.name}</strong>
+                      <small>{accountCustomer.email}</small>
+                    </div>
                   </div>
-                </label>
-                <label className="field">
-                  <span>Email</span>
-                  <div className="input-with-icon">
-                    <AtSign size={16} />
-                    <input value={customerEmail} onChange={(event) => setCustomerEmail(event.target.value)} />
-                  </div>
-                </label>
-                <label className="field">
-                  <span>Компания</span>
-                  <div className="input-with-icon">
-                    <Building2 size={16} />
-                    <input value={customerCompany} onChange={(event) => setCustomerCompany(event.target.value)} />
-                  </div>
-                </label>
+                  {accountCustomer.company ? <p>{accountCustomer.company}</p> : <p>Компания не указана в профиле</p>}
+                </div>
                 <div className="field">
                   <span>Иконка проекта</span>
                   <div className="icon-grid">

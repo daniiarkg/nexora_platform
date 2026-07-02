@@ -21,6 +21,7 @@ const (
 	googleOAuthAuthorizeURL      = "https://accounts.google.com/o/oauth2/v2/auth"
 	googleOAuthTokenURL          = "https://oauth2.googleapis.com/token"
 	googleOAuthUserInfoURL       = "https://www.googleapis.com/oauth2/v3/userinfo"
+	maxProfileAvatarURLBytes     = 260_000
 )
 
 func (s *Server) register(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +128,36 @@ func (s *Server) loginWithAccessKey(w http.ResponseWriter, r *http.Request) {
 func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 	user, ok := s.currentUser(w, r)
 	if !ok {
+		return
+	}
+	writeJSON(w, http.StatusOK, models.AuthResponse{User: authUser(user)})
+}
+
+func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
+	current, ok := s.currentUser(w, r)
+	if !ok {
+		return
+	}
+	var input models.UpdateProfileInput
+	if err := readJSON(w, r, &input); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	normalized, err := validateProfileInput(input)
+	if err != nil {
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": err.Error()})
+		return
+	}
+	user, err := s.store.UpdateUserProfile(r.Context(), current.ID, store.UpdateUserProfileInput{
+		FirstName: normalized.FirstName,
+		LastName:  normalized.LastName,
+		Company:   normalized.Company,
+		Phone:     normalized.Phone,
+		AvatarURL: normalized.AvatarURL,
+	})
+	if err != nil {
+		s.logger.Error("update profile failed", "error", err, "user_id", current.ID)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Профиль не удалось обновить."})
 		return
 	}
 	writeJSON(w, http.StatusOK, models.AuthResponse{User: authUser(user)})
@@ -515,6 +546,7 @@ func authUser(user models.User) models.AuthUser {
 		LastName:      user.LastName,
 		Company:       user.Company,
 		Phone:         user.Phone,
+		AvatarURL:     user.AvatarURL,
 		EmailVerified: user.EmailVerifiedAt != nil,
 	}
 }
@@ -550,4 +582,45 @@ func validateRegisterInput(input models.RegisterInput) (models.RegisterInput, er
 		Company:   company,
 		Phone:     phone,
 	}, nil
+}
+
+func validateProfileInput(input models.UpdateProfileInput) (models.UpdateProfileInput, error) {
+	phone, err := auth.NormalizePhone(input.Phone)
+	if err != nil {
+		return models.UpdateProfileInput{}, err
+	}
+	firstName := auth.CleanName(input.FirstName)
+	lastName := auth.CleanName(input.LastName)
+	company := auth.CleanName(input.Company)
+	avatarURL := strings.TrimSpace(input.AvatarURL)
+	if len([]rune(firstName)) < 2 || len([]rune(firstName)) > 80 {
+		return models.UpdateProfileInput{}, errors.New("Имя должно быть 2-80 символов.")
+	}
+	if len([]rune(lastName)) < 2 || len([]rune(lastName)) > 80 {
+		return models.UpdateProfileInput{}, errors.New("Фамилия должна быть 2-80 символов.")
+	}
+	if len([]rune(company)) > 160 {
+		return models.UpdateProfileInput{}, errors.New("Название компании должно быть до 160 символов.")
+	}
+	if len(avatarURL) > maxProfileAvatarURLBytes {
+		return models.UpdateProfileInput{}, errors.New("Фото профиля должно быть меньше 180 KB.")
+	}
+	if avatarURL != "" && !isAllowedAvatarURL(avatarURL) {
+		return models.UpdateProfileInput{}, errors.New("Фото профиля должно быть PNG, JPEG, WebP, SVG data URL или HTTPS URL.")
+	}
+	return models.UpdateProfileInput{
+		FirstName: firstName,
+		LastName:  lastName,
+		Company:   company,
+		Phone:     phone,
+		AvatarURL: avatarURL,
+	}, nil
+}
+
+func isAllowedAvatarURL(value string) bool {
+	return strings.HasPrefix(value, "https://") ||
+		strings.HasPrefix(value, "data:image/png;base64,") ||
+		strings.HasPrefix(value, "data:image/jpeg;base64,") ||
+		strings.HasPrefix(value, "data:image/webp;base64,") ||
+		strings.HasPrefix(value, "data:image/svg+xml;base64,")
 }

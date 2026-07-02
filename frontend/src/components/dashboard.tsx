@@ -9,13 +9,19 @@ import {
   Clock3,
   CreditCard,
   DatabaseZap,
+  FileDown,
+  FilePenLine,
   FolderOpen,
   History,
+  Hourglass,
   LayoutDashboard,
   LogOut,
+  PauseCircle,
   PlusCircle,
   RadioTower,
+  Rocket,
   Sparkles,
+  Wrench,
   Zap,
 } from "lucide-react";
 import { logout } from "@/lib/api";
@@ -23,11 +29,28 @@ import type { AuthUser } from "@/types";
 
 const chartPoints = "M0,250 Q100,220 200,240 T400,150 T600,180 T800,80 T1000,120";
 
-const automations = [
+type ProjectStatus = "черновик" | "в обработке" | "в разработке" | "запущен" | "приостановлен";
+
+const projectStatusMeta = {
+  черновик: { className: "draft", icon: FilePenLine },
+  "в обработке": { className: "processing", icon: Hourglass },
+  "в разработке": { className: "development", icon: Wrench },
+  запущен: { className: "launched", icon: Rocket },
+  приостановлен: { className: "paused", icon: PauseCircle },
+} satisfies Record<ProjectStatus, { className: string; icon: typeof FilePenLine }>;
+
+const projects: Array<{
+  name: string;
+  icon: typeof DatabaseZap;
+  status: ProjectStatus;
+  availability: string;
+  report: string;
+  href: string;
+}> = [
   {
     name: "Тестовый граф продаж",
     icon: DatabaseZap,
-    status: "Активен",
+    status: "запущен",
     availability: "99.9%",
     report: "Сегодня, 14:20",
     href: "/create?demo=test",
@@ -35,7 +58,7 @@ const automations = [
   {
     name: "Lead Qualification AI",
     icon: Sparkles,
-    status: "На проверке",
+    status: "в обработке",
     availability: "98.4%",
     report: "Сегодня, 11:05",
     href: "/create?demo=test",
@@ -43,10 +66,26 @@ const automations = [
   {
     name: "Slack Sales Alerts",
     icon: RadioTower,
-    status: "Черновик",
+    status: "черновик",
     availability: "—",
     report: "Вчера, 18:41",
     href: "/create",
+  },
+  {
+    name: "Data Pipeline Pro",
+    icon: DatabaseZap,
+    status: "в разработке",
+    availability: "—",
+    report: "После запуска",
+    href: "/create?demo=test",
+  },
+  {
+    name: "E-commerce Sync",
+    icon: RadioTower,
+    status: "приостановлен",
+    availability: "92.1%",
+    report: "Недоступен",
+    href: "/create?demo=test",
   },
 ];
 
@@ -67,6 +106,29 @@ export function Dashboard({ user }: DashboardProps) {
   async function handleLogout() {
     await logout().catch(() => undefined);
     router.replace("/auth/login");
+  }
+
+  function downloadProjectReport(project: (typeof projects)[number]) {
+    if (project.status !== "запущен") {
+      return;
+    }
+    const report = [
+      `Отчет по проекту: ${project.name}`,
+      `Статус: ${project.status}`,
+      `SLI доступность: ${project.availability}`,
+      `Обновлен: ${project.report}`,
+      "",
+      "Сводка: проект запущен, сценарий доступен для мониторинга и дальнейшей оптимизации.",
+    ].join("\n");
+    const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${project.name.toLowerCase().replace(/[^a-z0-9а-яё]+/gi, "-").replace(/^-|-$/g, "")}-report.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 250);
   }
 
   return (
@@ -102,14 +164,14 @@ export function Dashboard({ user }: DashboardProps) {
         </div>
 
         <div className="sidebar-profile">
-          <div className="scenario-icon">
-            <img alt="" src="/brand/nexora-icon.png" />
+          <div className="scenario-icon profile-avatar-mini">
+            <img alt="" src={user.avatar_url || "/brand/nexora-icon.png"} />
           </div>
           <div>
             <p>
               {user.first_name} {user.last_name}
             </p>
-            <span>{user.company || "Workspace Owner"}</span>
+            <Link href="/profile">{user.company || "Личный кабинет"}</Link>
           </div>
           <button className="dashboard-logout" type="button" onClick={handleLogout} aria-label="Выйти">
             <LogOut size={18} />
@@ -167,7 +229,7 @@ export function Dashboard({ user }: DashboardProps) {
           <section className="dashboard-section" id="projects">
             <div className="section-heading compact">
               <div>
-                <h2>Активные автоматизации</h2>
+                <h2>Ваши проекты</h2>
                 <p>Все рабочие сценарии и заявки собраны в одном месте</p>
               </div>
               <Link className="dashboard-secondary-link" href="/create">
@@ -183,39 +245,48 @@ export function Dashboard({ user }: DashboardProps) {
                     <th>Название</th>
                     <th>Статус</th>
                     <th>SLI Доступность</th>
-                    <th>Отчетность</th>
+                    <th>Отчет</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {automations.map((automation) => {
-                    const Icon = automation.icon;
+                  {projects.map((project) => {
+                    const Icon = project.icon;
+                    const status = projectStatusMeta[project.status];
+                    const StatusIcon = status.icon;
+                    const reportAvailable = project.status === "запущен";
                     return (
-                      <tr key={automation.name}>
+                      <tr key={project.name}>
                         <td>
                           <div className="automation-name">
                             <Icon size={20} />
-                            <Link href={automation.href}>{automation.name}</Link>
+                            <Link href={project.href}>{project.name}</Link>
                           </div>
                         </td>
                         <td>
-                          <span className="status-chip">
-                            <span />
-                            {automation.status}
+                          <span className={`status-chip status-${status.className}`}>
+                            <StatusIcon size={14} />
+                            {project.status}
                           </span>
                         </td>
                         <td>
                           <div className="availability">
                             <div>
-                              <i style={{ width: automation.availability === "—" ? "18%" : automation.availability }} />
+                              <i style={{ width: project.availability === "—" ? "18%" : project.availability }} />
                             </div>
-                            <span>{automation.availability}</span>
+                            <span>{project.availability}</span>
                           </div>
                         </td>
                         <td>
-                          <div className="report-cell">
-                            <Clock3 size={16} />
-                            <span>{automation.report}</span>
-                          </div>
+                          <button
+                            className="report-download"
+                            type="button"
+                            disabled={!reportAvailable}
+                            onClick={() => downloadProjectReport(project)}
+                            title={reportAvailable ? "Скачать отчет о проекте" : "Отчет доступен только для запущенных проектов"}
+                          >
+                            {reportAvailable ? <FileDown size={16} /> : <Clock3 size={16} />}
+                            <span>{reportAvailable ? "Скачать отчет" : "Недоступен"}</span>
+                          </button>
                         </td>
                       </tr>
                     );

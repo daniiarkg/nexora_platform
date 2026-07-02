@@ -23,7 +23,7 @@ function AuthShell({
   title,
   children,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   children: ReactNode;
 }) {
@@ -34,7 +34,7 @@ function AuthShell({
           <img alt="Nexora" src="/brand/nexora-logo-white.svg" />
         </Link>
         <div className="auth-heading">
-          <span>{eyebrow}</span>
+          {eyebrow ? <span>{eyebrow}</span> : null}
           <h1>{title}</h1>
         </div>
         {children}
@@ -115,7 +115,7 @@ export function RegisterPage() {
           />
         </label>
         <label className="field">
-          <span>Компания</span>
+          <span>Название компании (необязательно)</span>
           <input
             autoComplete="organization"
             value={form.company}
@@ -206,7 +206,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell eyebrow="Вход" title="Продолжить в Nexora">
+    <AuthShell title="Войдите в аккаунт">
       <div className="auth-tabs" role="tablist">
         <button className={mode === "password" ? "active" : ""} type="button" onClick={() => setMode("password")}>
           <Mail size={16} />
@@ -255,11 +255,15 @@ export function LoginPage() {
           <label className="field">
             <span>Ключ доступа</span>
             <input
-              autoComplete="one-time-code"
+              autoCapitalize="none"
+              autoComplete="current-password"
+              autoCorrect="off"
+              spellCheck={false}
               value={accessKey}
               onChange={(event) => setAccessKey(event.target.value)}
               required
             />
+            <small className="field-hint">Введите ключ ровно в том виде, в котором он был выдан и сохранен.</small>
           </label>
         )}
 
