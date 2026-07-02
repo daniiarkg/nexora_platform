@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,9 +26,14 @@ import {
   Zap,
 } from "lucide-react";
 import { logout } from "@/lib/api";
+import {
+  mockAutomationActivityDataExtractPort,
+  type AutomationActivityDataExtractPort,
+  type AutomationActivityPoint,
+  type AutomationActivityRange,
+  type AutomationActivitySeries,
+} from "@/lib/activity-data";
 import type { AuthUser } from "@/types";
-
-const chartPoints = "M0,250 Q100,220 200,240 T400,150 T600,180 T800,80 T1000,120";
 
 type ProjectStatus = "черновик" | "в обработке" | "в разработке" | "запущен" | "приостановлен";
 
@@ -41,6 +46,7 @@ const projectStatusMeta = {
 } satisfies Record<ProjectStatus, { className: string; icon: typeof FilePenLine }>;
 
 const projects: Array<{
+  id: string;
   name: string;
   icon: typeof DatabaseZap;
   status: ProjectStatus;
@@ -49,6 +55,7 @@ const projects: Array<{
   href: string;
 }> = [
   {
+    id: "sales-demo",
     name: "Тестовый граф продаж",
     icon: DatabaseZap,
     status: "запущен",
@@ -57,6 +64,7 @@ const projects: Array<{
     href: "/create?demo=test",
   },
   {
+    id: "lead-qualification",
     name: "Lead Qualification AI",
     icon: Sparkles,
     status: "в обработке",
@@ -65,6 +73,7 @@ const projects: Array<{
     href: "/create?demo=test",
   },
   {
+    id: "slack-sales-alerts",
     name: "Slack Sales Alerts",
     icon: RadioTower,
     status: "черновик",
@@ -73,6 +82,7 @@ const projects: Array<{
     href: "/create",
   },
   {
+    id: "data-pipeline-pro",
     name: "Data Pipeline Pro",
     icon: DatabaseZap,
     status: "в разработке",
@@ -81,11 +91,21 @@ const projects: Array<{
     href: "/create?demo=test",
   },
   {
+    id: "ecommerce-sync",
     name: "E-commerce Sync",
     icon: RadioTower,
     status: "приостановлен",
     availability: "92.1%",
     report: "Недоступен",
+    href: "/create?demo=test",
+  },
+  {
+    id: "customer-support",
+    name: "Customer Support QA",
+    icon: Sparkles,
+    status: "запущен",
+    availability: "99.4%",
+    report: "Сегодня, 15:10",
     href: "/create?demo=test",
   },
 ];
@@ -99,6 +119,8 @@ const navItems = [
 
 const mainProjectStatuses = new Set<ProjectStatus>(["запущен", "в обработке", "в разработке"]);
 const mainProjects = projects.filter((project) => mainProjectStatuses.has(project.status));
+const activeProjects = projects.filter((project) => project.status === "запущен");
+const activityDataExtractPort: AutomationActivityDataExtractPort = mockAutomationActivityDataExtractPort;
 
 type DashboardProps = {
   user: AuthUser;
@@ -107,6 +129,13 @@ type DashboardProps = {
 export function Dashboard({ user }: DashboardProps) {
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [activityRange, setActivityRange] = useState<AutomationActivityRange>("30d");
+  const [selectedAutomationId, setSelectedAutomationId] = useState(activeProjects[0]?.id ?? "");
+  const selectedAutomation = activeProjects.find((project) => project.id === selectedAutomationId) ?? activeProjects[0] ?? null;
+  const activitySeries = useMemo(
+    () => (selectedAutomation ? activityDataExtractPort.extractActivity(selectedAutomation.id, activityRange) : null),
+    [activityRange, selectedAutomation?.id],
+  );
 
   async function confirmLogout() {
     await logout().catch(() => undefined);
@@ -205,30 +234,40 @@ export function Dashboard({ user }: DashboardProps) {
           <section className="dashboard-section" id="main">
             <div className="section-heading">
               <div>
-                <h1>Частота использования системы</h1>
-                <p>Анализ активности автоматизаций за последние 30 дней</p>
+                <h1>Активность автоматизации</h1>
+                <p>Использование запущенных сценариев по дням</p>
               </div>
-              <div className="range-toggle">
-                <button className="active" type="button">
-                  30 Дней
-                </button>
-                <button type="button">7 Дней</button>
+              <div className="activity-controls">
+                <label>
+                  <span>Автоматизация</span>
+                  <select
+                    value={selectedAutomation?.id ?? ""}
+                    onChange={(event) => setSelectedAutomationId(event.target.value)}
+                  >
+                    {activeProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="range-toggle">
+                  <button
+                    className={activityRange === "30d" ? "active" : ""}
+                    type="button"
+                    onClick={() => setActivityRange("30d")}
+                  >
+                    30 Дней
+                  </button>
+                  <button className={activityRange === "7d" ? "active" : ""} type="button" onClick={() => setActivityRange("7d")}>
+                    7 Дней
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="analytics-card">
-              <svg className="usage-chart" viewBox="0 0 1000 300" role="img" aria-label="График активности">
-                <defs>
-                  <linearGradient id="dashboard-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                    <stop offset="0%" stopColor="#00674f" stopOpacity="0.42" />
-                    <stop offset="100%" stopColor="#00674f" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d={`${chartPoints} L1000,300 L0,300 Z`} fill="url(#dashboard-gradient)" />
-                <path d={chartPoints} fill="none" stroke="#00674f" strokeLinecap="round" strokeWidth="4" />
-                <circle cx="800" cy="80" fill="#00674f" r="6" />
-              </svg>
-              <div className="chart-grid" />
+              {activitySeries ? <AutomationActivityChart series={activitySeries} /> : null}
             </div>
           </section>
 
@@ -351,4 +390,98 @@ export function Dashboard({ user }: DashboardProps) {
       ) : null}
     </main>
   );
+}
+
+function AutomationActivityChart({ series }: { series: AutomationActivitySeries }) {
+  const chart = useMemo(() => buildChart(series.points), [series.points]);
+  const peak = Math.max(...series.points.map((point) => point.runs), 0);
+  const lastPoint = series.points[series.points.length - 1];
+
+  return (
+    <div className="activity-chart-layout">
+      <div className="activity-summary">
+        <div>
+          <span>Запусков</span>
+          <strong>{series.summary.totalRuns.toLocaleString("ru-RU")}</strong>
+        </div>
+        <div>
+          <span>Успешность</span>
+          <strong>{series.summary.successRate}%</strong>
+        </div>
+        <div>
+          <span>Ошибок</span>
+          <strong>{series.summary.failedRuns}</strong>
+        </div>
+        <div>
+          <span>Среднее время</span>
+          <strong>{formatDuration(series.summary.avgDurationMs)}</strong>
+        </div>
+      </div>
+      <svg className="usage-chart" viewBox="0 0 1000 320" role="img" aria-label="График запусков автоматизации">
+        <defs>
+          <linearGradient id="dashboard-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+            <stop offset="0%" stopColor="#00674f" stopOpacity="0.42" />
+            <stop offset="100%" stopColor="#00674f" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g className="chart-grid-lines">
+          {[0, 1, 2, 3].map((line) => (
+            <line key={line} x1="44" x2="956" y1={56 + line * 66} y2={56 + line * 66} />
+          ))}
+        </g>
+        {chart.areaPath ? <path d={chart.areaPath} fill="url(#dashboard-gradient)" /> : null}
+        {chart.linePath ? (
+          <path d={chart.linePath} fill="none" stroke="#00674f" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+        ) : null}
+        {chart.points.map((point) => (
+          <g key={point.source.date}>
+            <circle cx={point.x} cy={point.y} r="5" />
+            <title>{`${formatChartDate(point.source.date)}: ${point.source.runs} запусков`}</title>
+          </g>
+        ))}
+        <text x="44" y="302">
+          {formatChartDate(series.points[0]?.date ?? "")}
+        </text>
+        <text x="956" y="302" textAnchor="end">
+          {formatChartDate(lastPoint?.date ?? "")}
+        </text>
+        <text x="956" y="44" textAnchor="end">
+          Пик: {peak}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function buildChart(points: AutomationActivityPoint[]) {
+  const maxRuns = Math.max(...points.map((point) => point.runs), 1);
+  const width = 912;
+  const left = 44;
+  const top = 46;
+  const height = 218;
+  const mapped = points.map((point, index) => {
+    const x = left + (points.length === 1 ? 0 : (index / (points.length - 1)) * width);
+    const y = top + height - (point.runs / maxRuns) * height;
+    return { x: Math.round(x), y: Math.round(y), source: point };
+  });
+  return {
+    points: mapped,
+    linePath: mapped.map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`).join(" "),
+    areaPath:
+      mapped.length > 0 ? `${mapped.map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`).join(" ")} L956,264 L44,264 Z` : "",
+  };
+}
+
+function formatDuration(milliseconds: number) {
+  if (milliseconds < 1000) {
+    return `${milliseconds} мс`;
+  }
+  return `${(milliseconds / 1000).toFixed(1)} c`;
+}
+
+function formatChartDate(value: string) {
+  if (!value) {
+    return "";
+  }
+  return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short" }).format(new Date(`${value}T00:00:00`));
 }
