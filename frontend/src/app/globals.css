@@ -873,14 +873,15 @@ a {
 .node-port {
   width: 18px;
   height: 18px;
+  border: 2px solid rgba(0, 103, 79, 0.78);
   border-radius: 999px;
-  background: rgba(63, 73, 68, 0.2);
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4), -2px -2px 5px rgba(255, 255, 255, 0.03);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08), 0 0 14px rgba(255, 255, 255, 0.22);
 }
 
 .node-port.active {
-  background: var(--primary);
-  box-shadow: 0 0 12px rgba(0, 103, 79, 0.5);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(0, 103, 79, 0.18), 0 0 16px rgba(0, 103, 79, 0.55);
 }
 
 .agent-input {
