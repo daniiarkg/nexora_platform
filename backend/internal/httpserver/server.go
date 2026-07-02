@@ -82,6 +82,7 @@ func (s *Server) Routes() http.Handler {
 
 		r.Post("/automation-requests", s.createAutomationRequest)
 		r.Post("/ai/chat", s.chat)
+		r.Post("/graphs/edit", s.editGraph)
 		r.Post("/payments/checkout-intents", s.createCheckoutIntent)
 
 		r.Group(func(admin chi.Router) {

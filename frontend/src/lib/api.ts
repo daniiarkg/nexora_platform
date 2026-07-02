@@ -9,6 +9,8 @@ import type {
   AutomationRequestPayload,
   ChatMessage,
   EmailTemplateRender,
+  GraphEditPayload,
+  GraphEditResponse,
   LoginPayload,
   RegisterPayload,
   UpdateProfilePayload,
@@ -47,6 +49,13 @@ export async function sendChatMessage(sessionId: string, messages: ChatMessage[]
       session_id: sessionId,
       messages,
     }),
+  });
+}
+
+export async function editAutomationGraph(payload: GraphEditPayload): Promise<GraphEditResponse> {
+  return apiFetch<GraphEditResponse>("/api/v1/graphs/edit", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 

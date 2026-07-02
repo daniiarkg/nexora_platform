@@ -57,13 +57,13 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { sendChatMessage, submitAutomationRequest } from "@/lib/api";
+import { editAutomationGraph, submitAutomationRequest } from "@/lib/api";
 import {
   appendProjectHistory,
   BUILDER_DRAFT_KEY,
   readWorkspaceSettings,
 } from "@/lib/project-storage";
-import type { AuthUser, AutomationRequestPayload, ChatMessage } from "@/types";
+import type { AuthUser, AutomationGraph, AutomationRequestPayload, ChatMessage, GraphEditMode } from "@/types";
 
 type Mode = "ask" | "create";
 type ToolMode = "select" | "connect";
@@ -166,10 +166,10 @@ const testNodes: AutomationNodeType[] = [
 ];
 
 const testEdges: Edge[] = [
-  createStyledEdge("trigger", "enrich", "lead"),
-  createStyledEdge("enrich", "ai-score", "context"),
-  createStyledEdge("ai-score", "crm", "score"),
-  createStyledEdge("crm", "notify", "summary"),
+  createStyledEdge("trigger", "enrich"),
+  createStyledEdge("enrich", "ai-score"),
+  createStyledEdge("ai-score", "crm"),
+  createStyledEdge("crm", "notify"),
 ];
 
 type AutomationBuilderProps = {
@@ -316,31 +316,44 @@ export function AutomationBuilder({ user }: AutomationBuilderProps) {
       return;
     }
 
-    if (mode === "create") {
-      const generated = buildDemoGraph(submittedPrompt);
-      setNodes(generated.nodes);
-      setEdges(generated.edges);
-      setSelectedNodeId(generated.nodes[0]?.id ?? null);
-      setSelectedNodeIds([]);
-      setSelectedEdgeIds([]);
-      setPrompt("");
-      setAgentStatus({ type: "ok", text: "Демонстрационный граф обновлен." });
-      appendProjectHistory("Граф создан из промпта", submittedPrompt.slice(0, 140));
-      window.setTimeout(() => {
-        void flowInstance?.fitView({ padding: 0.28, duration: 240 });
-      }, 120);
-      return;
-    }
-
     setIsChatLoading(true);
     const nextMessages: ChatMessage[] = [...chatMessages, { role: "user", content: submittedPrompt }];
     setChatMessages(nextMessages);
     setPrompt("");
     try {
-      const answer = await sendChatMessage(sessionId, nextMessages);
+      const graphMode: GraphEditMode = mode === "create" ? "create" : "edit";
+      const answer = await editAutomationGraph({
+        session_id: sessionId,
+        mode: graphMode,
+        prompt: submittedPrompt,
+        graph: serializeCurrentGraph(nodes, edges),
+      });
+      const nextGraph = hydrateAutomationGraph(answer.graph);
+      const graphChanged = graphMode === "create" || (answer.commands?.length ?? 0) > 0;
+
       setSessionId(answer.session_id);
-      setChatMessages([...nextMessages, { role: "assistant", content: answer.message.trim() || "Ответ пустой." }]);
-      appendProjectHistory("AI ответил в чате", submittedPrompt.slice(0, 140));
+      if (answer.title && graphMode === "create") {
+        setTitle(answer.title);
+      }
+      if (graphChanged) {
+        setNodes(nextGraph.nodes);
+        setEdges(nextGraph.edges);
+        setSelectedNodeId(nextGraph.nodes[0]?.id ?? null);
+        setSelectedNodeIds([]);
+        setSelectedEdgeIds([]);
+        window.setTimeout(() => {
+          void flowInstance?.fitView({ padding: 0.28, duration: 240 });
+        }, 120);
+      }
+      setChatMessages([...nextMessages, { role: "assistant", content: answer.message.trim() || "Готово." }]);
+      setAgentStatus({
+        type: "ok",
+        text: graphChanged ? "Граф обновлен через AI." : "AI ответил без изменения графа.",
+      });
+      appendProjectHistory(
+        graphMode === "create" ? "AI создал граф" : graphChanged ? "AI изменил граф" : "AI ответил в чате",
+        submittedPrompt.slice(0, 140),
+      );
     } catch (error) {
       setPrompt(submittedPrompt);
       setAgentStatus({ type: "error", text: error instanceof Error ? error.message : "AI недоступен." });
@@ -398,7 +411,6 @@ export function AutomationBuilder({ user }: AutomationBuilderProps) {
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            label: typeof edge.label === "string" ? edge.label : undefined,
           })),
         },
       };
@@ -518,7 +530,7 @@ export function AutomationBuilder({ user }: AutomationBuilderProps) {
       return;
     }
 
-    const edge = createStyledEdge(connectSourceId, node.id, "link");
+    const edge = createStyledEdge(connectSourceId, node.id);
     setEdges((current) => addEdge(edge, current));
     setConnectSourceId(null);
     setToolMode("select");
@@ -1019,86 +1031,54 @@ function AutomationNode({ data, selected }: NodeProps<AutomationNodeType>) {
   );
 }
 
-function createStyledEdge(source: string, target: string, label: string): Edge {
+function createStyledEdge(source: string, target: string, id?: string): Edge {
   return {
-    id: `${source}-${target}-${label}`,
+    id: id || `edge-${source}-${target}`,
     source,
     target,
-    label,
     markerEnd: { type: MarkerType.ArrowClosed },
     animated: true,
     style: defaultEdgeStyle,
   };
 }
 
-function buildDemoGraph(prompt: string): { nodes: AutomationNodeType[]; edges: Edge[] } {
-  const cleanPrompt = prompt.trim().replace(/\s+/g, " ");
-  const shortPrompt = cleanPrompt.length > 96 ? `${cleanPrompt.slice(0, 93)}...` : cleanPrompt;
-  const hasEmail = /mail|email|почт|gmail|уведом/i.test(cleanPrompt);
-  const hasCRM = /crm|amo|bitrix|hubspot|лид|сделк|ворон/i.test(cleanPrompt);
-  const hasData = /таблиц|баз|data|postgres|sheet|отчет|аналит/i.test(cleanPrompt);
+function serializeCurrentGraph(nodes: AutomationNodeType[], edges: Edge[]): AutomationGraph {
+  return {
+    nodes: nodes.map((node) => ({
+      id: node.id,
+      type: node.data.kind,
+      title: node.data.title,
+      description: node.data.description,
+      icon: node.data.icon,
+      position: {
+        x: node.position.x,
+        y: node.position.y,
+      },
+      metadata: {
+        source: "nexora-builder",
+      },
+    })),
+    edges: edges.map((edge) => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+    })),
+  };
+}
 
-  const specs = [
-    {
-      id: "trigger",
-      kind: "Триггер",
-      title: "Старт",
-      description: `"${shortPrompt}"`,
-      icon: "Zap",
-      position: { x: 180, y: 150 },
-    },
-    {
-      id: "normalize",
-      kind: "Обработка",
-      title: "Нормализация",
-      description: "Проверка данных, дедупликация и подготовка payload.",
-      icon: hasData ? "DatabaseZap" : "Webhook",
-      position: { x: 510, y: 260 },
-    },
-    {
-      id: "ai",
-      kind: "ИИ Анализ",
-      title: "AI решение",
-      description: "Оценка намерения, приоритета, следующего действия и риска.",
-      icon: "BrainCircuit",
-      position: { x: 840, y: 140 },
-    },
-    {
-      id: "system",
-      kind: "Интеграция",
-      title: hasCRM ? "CRM запись" : "Системное действие",
-      description: hasCRM ? "Создание карточки, задачи и комментария в CRM." : "Запись результата во внешнюю систему.",
-      icon: hasCRM ? "Boxes" : "Webhook",
-      position: { x: 1170, y: 260 },
-    },
-    {
-      id: "notify",
-      kind: "Уведомление",
-      title: hasEmail ? "Email итог" : "Уведомление",
-      description: "Отправка резюме ответственному сотруднику.",
-      icon: "MailCheck",
-      position: { x: 1500, y: 150 },
-    },
-  ] satisfies Array<AutomationNodeData & { id: string; position: { x: number; y: number } }>;
-
-  const nextNodes: AutomationNodeType[] = specs.map((spec) => ({
-    id: spec.id,
-    type: "automation",
-    position: spec.position,
-    data: {
-      title: spec.title,
-      description: spec.description,
-      icon: spec.icon,
-      kind: spec.kind,
-    },
-  }));
-
-  const nextEdges: Edge[] = [
-    ["trigger", "normalize", "event"],
-    ["normalize", "ai", "context"],
-    ["ai", "system", "decision"],
-    ["system", "notify", "summary"],
-  ].map(([source, target, label]) => createStyledEdge(source, target, label));
-
-  return { nodes: nextNodes, edges: nextEdges };
+function hydrateAutomationGraph(graph: AutomationGraph): { nodes: AutomationNodeType[]; edges: Edge[] } {
+  return {
+    nodes: graph.nodes.map((node) => ({
+      id: node.id,
+      type: "automation",
+      position: node.position,
+      data: {
+        kind: node.type || "Действие",
+        title: node.title || "Шаг автоматизации",
+        description: node.description || "Описание шага автоматизации.",
+        icon: IconByName[node.icon] ? node.icon : "Webhook",
+      },
+    })),
+    edges: graph.edges.map((edge) => createStyledEdge(edge.source, edge.target, edge.id)),
+  };
 }

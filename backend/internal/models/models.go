@@ -35,6 +35,42 @@ type AutomationGraph struct {
 	Edges []GraphEdge `json:"edges"`
 }
 
+type GraphEditRequest struct {
+	SessionID string          `json:"session_id"`
+	Mode      string          `json:"mode"`
+	Prompt    string          `json:"prompt"`
+	Graph     AutomationGraph `json:"graph"`
+}
+
+type GraphEditCommand struct {
+	Action   string         `json:"action"`
+	ID       string         `json:"id,omitempty"`
+	Title    string         `json:"title,omitempty"`
+	Node     *GraphNode     `json:"node,omitempty"`
+	Nodes    []GraphNode    `json:"nodes,omitempty"`
+	Edges    []GraphEdge    `json:"edges,omitempty"`
+	Source   string         `json:"source,omitempty"`
+	Target   string         `json:"target,omitempty"`
+	Type     string         `json:"type,omitempty"`
+	Icon     string         `json:"icon,omitempty"`
+	Position *GraphPosition `json:"position,omitempty"`
+}
+
+type GraphEditPlan struct {
+	Message  string             `json:"message"`
+	Title    string             `json:"title,omitempty"`
+	Commands []GraphEditCommand `json:"commands"`
+}
+
+type GraphEditResponse struct {
+	SessionID string             `json:"session_id"`
+	Message   string             `json:"message"`
+	Model     string             `json:"model"`
+	Title     string             `json:"title,omitempty"`
+	Graph     AutomationGraph    `json:"graph"`
+	Commands  []GraphEditCommand `json:"commands,omitempty"`
+}
+
 type AutomationRequestInput struct {
 	Title       string          `json:"title"`
 	Description string          `json:"description"`

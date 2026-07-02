@@ -45,6 +45,41 @@ export type AutomationRequest = AutomationRequestPayload & {
   updated_at: string;
 };
 
+export type GraphEditMode = "create" | "edit";
+
+export type GraphEditCommand = {
+  action: string;
+  id?: string;
+  title?: string;
+  node?: Partial<AutomationGraphNode>;
+  nodes?: AutomationGraphNode[];
+  edges?: AutomationGraphEdge[];
+  source?: string;
+  target?: string;
+  type?: string;
+  icon?: string;
+  position?: {
+    x: number;
+    y: number;
+  };
+};
+
+export type GraphEditPayload = {
+  session_id: string;
+  mode: GraphEditMode;
+  prompt: string;
+  graph: AutomationGraph;
+};
+
+export type GraphEditResponse = {
+  session_id: string;
+  message: string;
+  model: string;
+  title?: string;
+  graph: AutomationGraph;
+  commands?: GraphEditCommand[];
+};
+
 export type EmailTemplateSummary = {
   id: string;
   name: string;
