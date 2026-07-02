@@ -284,7 +284,7 @@ func (s *Server) googleStart(w http.ResponseWriter, r *http.Request) {
 
 	params := url.Values{}
 	params.Set("client_id", s.cfg.GoogleOAuthClientID)
-	params.Set("redirect_uri", s.cfg.GoogleOAuthRedirectURL)
+	params.Set("redirect_uri", s.googleRedirectURL(r))
 	params.Set("response_type", "code")
 	params.Set("scope", "openid email profile")
 	params.Set("state", state)
@@ -294,7 +294,7 @@ func (s *Server) googleStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) googleCallback(w http.ResponseWriter, r *http.Request) {
-	appURL := strings.TrimRight(s.cfg.PublicAppURL, "/")
+	appURL := s.appURLForRequest(r)
 	fail := func(reason string) {
 		http.Redirect(w, r, appURL+"/auth/login?error="+url.QueryEscape(reason), http.StatusFound)
 	}
@@ -316,7 +316,7 @@ func (s *Server) googleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := s.fetchGoogleProfile(r.Context(), code)
+	profile, err := s.fetchGoogleProfile(r.Context(), code, s.googleRedirectURL(r))
 	if err != nil {
 		s.logger.Error("google oauth failed", "error", err)
 		fail("oauth_failed")
@@ -341,13 +341,13 @@ func (s *Server) googleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, appURL+"/profile", http.StatusFound)
 }
 
-func (s *Server) fetchGoogleProfile(ctx context.Context, code string) (models.GoogleProfile, error) {
+func (s *Server) fetchGoogleProfile(ctx context.Context, code string, redirectURI string) (models.GoogleProfile, error) {
 	form := url.Values{}
 	form.Set("client_id", s.cfg.GoogleOAuthClientID)
 	form.Set("client_secret", s.cfg.GoogleOAuthClientSecret)
 	form.Set("code", code)
 	form.Set("grant_type", "authorization_code")
-	form.Set("redirect_uri", s.cfg.GoogleOAuthRedirectURL)
+	form.Set("redirect_uri", redirectURI)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, googleOAuthTokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -419,6 +419,59 @@ func (s *Server) fetchGoogleProfile(ctx context.Context, code string) (models.Go
 		FirstName:      firstName,
 		LastName:       lastName,
 	}, nil
+}
+
+func (s *Server) googleRedirectURL(r *http.Request) string {
+	return s.appURLForRequest(r) + "/api/v1/auth/google/callback"
+}
+
+func (s *Server) appURLForRequest(r *http.Request) string {
+	origin := requestOrigin(r)
+	if origin != "" && s.originAllowed(origin) {
+		return origin
+	}
+	if s.cfg.GoogleOAuthRedirectURL != "" {
+		if parsed, err := url.Parse(s.cfg.GoogleOAuthRedirectURL); err == nil && parsed.Scheme != "" && parsed.Host != "" {
+			return parsed.Scheme + "://" + parsed.Host
+		}
+	}
+	return strings.TrimRight(s.cfg.PublicAppURL, "/")
+}
+
+func (s *Server) originAllowed(origin string) bool {
+	for _, allowed := range s.cfg.AllowedOrigins {
+		if strings.EqualFold(strings.TrimRight(allowed, "/"), origin) {
+			return true
+		}
+	}
+	return false
+}
+
+func requestOrigin(r *http.Request) string {
+	host := firstForwardedValue(r.Header.Get("X-Forwarded-Host"))
+	if host == "" {
+		host = strings.TrimSpace(r.Host)
+	}
+	if host == "" {
+		return ""
+	}
+	proto := firstForwardedValue(r.Header.Get("X-Forwarded-Proto"))
+	if proto == "" {
+		if r.TLS != nil {
+			proto = "https"
+		} else {
+			proto = "http"
+		}
+	}
+	return strings.TrimRight(strings.ToLower(proto)+"://"+host, "/")
+}
+
+func firstForwardedValue(value string) string {
+	if value == "" {
+		return ""
+	}
+	parts := strings.Split(value, ",")
+	return strings.TrimSpace(parts[0])
 }
 
 func (s *Server) issueConfirmationEmail(ctx context.Context, user models.User) bool {
