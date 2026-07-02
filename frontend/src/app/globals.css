@@ -761,20 +761,24 @@ a {
   opacity: 0.55;
 }
 
-.react-flow__handle {
-  width: 24px;
-  height: 24px;
-  border: 2px solid rgba(12, 12, 12, 0.86);
-  background: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 103, 79, 0.16), 0 0 16px rgba(0, 103, 79, 0.58);
+.automation-node .node-connector-handle {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 103, 79, 0.86);
+  background: #ffffff;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.08), 0 0 18px rgba(0, 103, 79, 0.62);
 }
 
-.automation-node .react-flow__handle-left {
-  left: -12px;
+.automation-node .node-connector-handle.react-flow__handle-left {
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
 }
 
-.automation-node .react-flow__handle-right {
-  right: -12px;
+.automation-node .node-connector-handle.react-flow__handle-right {
+  top: 50%;
+  right: 0;
+  transform: translate(50%, -50%);
 }
 
 .automation-node {
@@ -861,27 +865,6 @@ a {
 
 .node-active .automation-node-desc {
   font-style: normal;
-}
-
-.automation-node-ports {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
-}
-
-.node-port {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(0, 103, 79, 0.78);
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08), 0 0 14px rgba(255, 255, 255, 0.22);
-}
-
-.node-port.active {
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(0, 103, 79, 0.18), 0 0 16px rgba(0, 103, 79, 0.55);
 }
 
 .agent-input {

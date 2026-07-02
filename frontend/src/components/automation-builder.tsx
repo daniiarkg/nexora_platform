@@ -1010,7 +1010,7 @@ function AutomationNode({ data, selected }: NodeProps<AutomationNodeType>) {
   const isActive = data.kind.toLowerCase().includes("ai") || data.kind.toLowerCase().includes("ии");
   return (
     <div className={`automation-node ${isActive ? "node-active" : ""} ${selected ? "selected" : ""}`}>
-      <Handle type="target" position={Position.Left} />
+      <Handle className="node-connector-handle" type="target" position={Position.Left} />
       <div className="automation-node-header">
         <div className="automation-node-kind">
           <Icon size={15} fill="currentColor" />
@@ -1022,11 +1022,7 @@ function AutomationNode({ data, selected }: NodeProps<AutomationNodeType>) {
         <p className="automation-node-title">{data.title}</p>
         <p className="automation-node-desc">{data.description}</p>
       </div>
-      <div className="automation-node-ports">
-        <span className="node-port" />
-        <span className={`node-port ${isActive ? "active" : ""}`} />
-      </div>
-      <Handle type="source" position={Position.Right} />
+      <Handle className="node-connector-handle" type="source" position={Position.Right} />
     </div>
   );
 }
